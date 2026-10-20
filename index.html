@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#061426">
+<meta name="description" content="Spaservis Portal Maestro 3D: proyectos académicos, salud, tecnología, servicios y gestión digital.">
+<title>Spaservis | Portal Maestro 3D</title>
+
+<link rel="preconnect" href="https://googleapis.com">
+<link href="https://googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cloudflare.com"></script>
+<script src="https://cloudflare.com"></script>
+<!-- Supabase Client CDN -->
+<script src="https://jsdelivr.net"></script>
+
+<style>
+:root{
+  --bg:#061426;--bg2:#0a2039;--panel:rgba(13,37,62,.82);
+  --panel2:#102d4a;--blue:#1677ff;--cyan:#40e8ff;
+  --gold:#f5c96a;--text:#eaf5ff;--muted:#a5bbd0;
+  --line:rgba(117,200,255,.19);--good:#56e6ac;--danger:#ff7789;
+  --radius:20px;--shadow:0 18px 55px #0005;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:88px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif;line-height:1.55;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;z-index:-3;background:
+radial-gradient(ellipse at 15% 10%,#0c3b6b 0,transparent 45%),
+radial-gradient(ellipse at 90% 50%,#09284b 0,transparent 45%),
+linear-gradient(145deg,#040d19,#07192d 60%,#061426)}
+button,input,select,textarea{font:inherit}
+button,a{ -webkit-tap-highlight-color:transparent }
+a{color:var(--cyan);text-decoration:none}
+a:hover{color:#fff}
+button{cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+button:disabled{opacity:.45;cursor:not-allowed}
+#starfield{position:fixed;inset:0;width:100%;height:100%;z-index:-2;pointer-events:none}
+.grid-floor{position:fixed;left:-20%;right:-20%;bottom:-25%;height:65%;z-index:-1;pointer-events:none;
+background-image:linear-gradient(#35cfff16 1px,transparent 1px),linear-gradient(90deg,#35cfff16 1px,transparent 1px);
+background-size:44px 44px;transform:perspective(300px) rotateX(58deg);mask-image:linear-gradient(transparent,#000)}
+header{position:sticky;top:0;z-index:50;background:#061426dd;backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+.nav{max-width:1450px;margin:auto;padding:12px 22px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:11px;min-width:220px}
+.brand-mark{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;
+background:linear-gradient(135deg,var(--blue),#06284b 70%);border:1px solid #65dfff77;
+box-shadow:0 0 24px #17bfff36;font-size:23px}
+.brand strong{font-family:Orbitron,sans-serif;letter-spacing:1px;font-size:15px}
+.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:2px}
+.navlinks{display:flex;gap:5px;align-items:center;flex:1;flex-wrap:wrap}
+.navlinks a{font-size:12px;color:#d3e6f6;padding:9px 10px;border-radius:10px}
+.navlinks a:hover{background:#1b4262;color:var(--cyan)}
+.nav-actions{display:flex;gap:7px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line);
+border-radius:12px;padding:10px 14px;background:#102b46;color:var(--text);font-weight:700;font-size:12px;transition:.2s}
+.btn:hover{transform:translateY(-2px);border-color:var(--cyan);box-shadow:0 6px 22px #00cfff22}
+.btn.primary{background:linear-gradient(115deg,#1262db,#087d9e);border-color:#57dfff88}
+.btn.gold{background:linear-gradient(120deg,#dba744,#ffe6a2);color:#18202b;border-color:transparent}
+.btn.danger{border-color:#ff778955;color:#ff9cac}
+.icon-btn{width:40px;height:40px;padding:0;font-size:17px}
+main{max-width:1450px;margin:auto;padding:22px}
+.hero{min-height:500px;display:grid;grid-template-columns:1.1fr .9fr;align-items:center;gap:22px;padding:35px 0 50px}
+.eyebrow{color:var(--cyan);font-size:11px;letter-spacing:3px;font-weight:800;text-transform:uppercase}
+.hero h1{font-family:Orbitron,sans-serif;font-size:clamp(32px,5vw,65px);line-height:1.1;letter-spacing:-1.8px;margin:17px 0}
+.hero h1 span{color:var(--cyan);text-shadow:0 0 28px #28cfff45}
+.hero p{max-width:650px;color:var(--muted);font-size:15px}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:25px}
+.pill{font-size:11px;color:#c4d8e9;border:1px solid var(--line);background:#0b2037a8;padding:7px 11px;border-radius:30px}
+.scene-wrap{position:relative;min-height:410px;display:grid;place-items:center;perspective:900px}
+#scene3d{width:100%;height:410px;display:block}
+.scene-hud{position:absolute;inset:auto 5% 8% 5%;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
+.hud-chip{background:#061426bd;border:1px solid #3cdfff55;backdrop-filter:blur(8px);border-radius:12px;padding:10px 13px;font-size:10px;color:#bcecff}
+.hud-chip strong{display:block;font-family:Orbitron,sans-serif;color:var(--cyan);font-size:12px}
+.section{padding:36px 0}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:18px;margin-bottom:20px}
+.section-head h2{font-family:Orbitron,sans-serif;font-size:clamp(21px,3vw,30px);margin:5px 0}
+.section-head p{margin:0;color:var(--muted);font-size:13px}
+.section-kicker{font-size:10px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;font-weight:800}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}
+.stat,.card,.panel{background:linear-gradient(145deg,#102d49df,#091c30e8);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.stat{padding:20px;position:relative;overflow:hidden}
+.stat:after{content:"";position:absolute;width:90px;height:90px;right:-30px;top:-30px;border:1px solid #38dfff24;border-radius:50%;box-shadow:0 0 0 14px #38dfff08,0 0 0 28px #38dfff05}
+.stat span{color:var(--muted);font-size:11px}
+.stat strong{display:block;font-family:Orbitron,sans-serif;font-size:28px;margin-top:8px;color:var(--cyan)}
+.stat small{color:var(--gold);font-size:10px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+.field{width:100%;background:#06172a;color:var(--text);border:1px solid #326080;border-radius:11px;padding:11px 12px;min-width:0}
+.field::placeholder{color:#7795ae}
+.search{flex:1;min-width:200px}
+.filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:20px}
+.filter{padding:8px 12px;border-radius:30px;background:#0c2137;color:#a9c2d8;border:1px solid var(--line);font-size:11px;cursor:pointer;transition:.2s}
+.filter.active{background:#087ca1;color:#fff;border-color:var(--cyan)}
+.project-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.project-card{padding:19px;position:relative;overflow:hidden;transform-style:preserve-3d;transition:transform .25s,border-color .25s;min-height:235px}
+.project-card:hover{transform:translateY(-6px) rotateX(1deg);border-color:#40e8ff66}
+.project-card:before{content:"";position:absolute;width:160px;height:160px;right:-95px;top:-95px;border:1px solid #40e8ff26;border-radius:50%;box-shadow:0 0 0 18px #40e8ff07,0 0 0 38px #40e8ff05;pointer-events:none}
+.card-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.project-icon{width:45px;height:45px;border-radius:14px;background:linear-gradient(140deg,#126bd1,#0c344f);display:grid;place-items:center;font-size:22px;border:1px solid #5adfff50}
+.tag{font-size:9px;padding:5px 8px;border-radius:30px;background:#0c5a6277;color:#79f3e7;border:1px solid #5be8de33}
+.project-card h3{font-size:16px;margin:15px 0 6px}
+.project-card p{font-size:12px;color:var(--muted);min-height:38px;margin:0}
+.project-meta{display:flex;justify-content:space-between;gap:8px;color:#8eabc4;font-size:10px;margin-top:13px}
+.card-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:15px}
+.card-actions .btn{padding:8px 10px;font-size:11px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.panel{padding:22px}
+.panel h3{margin:0 0 12px 0;font-family:Orbitron,sans-serif;font-size:18px;color:var(--cyan)}
+
+/* Nuevos Estilos para el estado de carga y barra de porcentaje */
+.progress-box {
+  grid-column: span 3;
+  text-align: center;
+  padding: 50px 20px;
+}
+.progress-text {
+  font-family: Orbitron, sans-serif;
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 15px;
+  letter-spacing: 1px;
+}
+.progress-counter {
+  color: var(--cyan);
+  font-weight: bold;
+}
+.progress-bar-bg {
+  width: 100%;
+  max-width: 400px;
+  height: 6px;
+  background: var(--panel2);
+  border-radius: 10px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.progress-bar-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  box-shadow: 0 0 12px var(--cyan);
+  transition: width 0.1s ease;
+}
+</style>
+</head>
+<body>
+
+<div id="starfield"></div>
+<div class="grid-floor"></div>
+
+<header>
+  <div class="nav">
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div>
+        <strong>SPASERVIS</strong>
+        <small>PORTAL MAESTRO</small>
+      </div>
+    </div>
+    <div class="navlinks">
+      <a href="#proyectos">Proyectos</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Sección Hero -->
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Portal Digital Innovador</div>
+      <h1>Spaservis <span>Portal Maestro 3D</span></h1>
+      <p>Gestión avanzada de proyectos académicos, control de salud, tecnología interactiva y servicios digitales de última generación.</p>
+    </div>
+    <div class="scene-wrap">
+      <div id="scene3d"></div>
+    </div>
+  </section>
+
+  <!-- Sección de Control y Visualización de Proyectos -->
+  <section id="proyectos" class="section">
+    <div class="section-head">
+      <div>
+        <div class="section-kicker">Panel General</div>
