@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Propuesta Fondo 1 - Portafolio 3D Spaservis</title>
+<style>
+:root {
+  --azul: #0A3D62;
+  --azul-oscuro: #062744;
+  --dorado: #D4AF37;
+  --turquesa: #1ABC9C;
+  --fondo-base: #061626; /* Ajustado al tono azul noche profundo de la imagen */
+  --blanco: #FFFFFF;
+  --texto: #F1F5F9;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--fondo-base);
+  color: var(--texto);
+  overflow-x: hidden;
+  position: relative;
+  perspective: 1000px;
+}
+
+/* ==========================================
+   CONTENEDOR Y PLANO 3D TRASERO (FONDO 1)
+========================================== */
+#background-3d-universe {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  transform-style: preserve-3d;
+}
+
+.grid-plane {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  top: -50%;
+  left: -50%;
+  background-image: 
+    linear-gradient(rgba(26, 188, 156, 0.03) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, rgba(26, 188, 156, 0.03) 1.5px, transparent 1.5px);
+  background-size: 60px 60px;
+  transform: rotateX(65deg) rotateZ(-10deg) translateZ(-200px);
+  opacity: 0.6;
+}
+
+.lizard-specimen {
+  position: absolute;
+  width: 120px;
+  height: auto;
+  top: 40%;
+  left: -150px;
+  transform-style: preserve-3d;
+  animation: crawl3D 25s infinite linear;
+}
+
+@keyframes crawl3D {
+  0% {
+    transform: translate3d(0vw, 20vh, -200px) rotateZ(45deg);
+  }
+  30% {
+    transform: translate3d(40vw, -10vh, -50px) rotateZ(60deg);
+  }
+  60% {
+    transform: translate3d(70vw, 40vh, -300px) rotateZ(-20deg);
+  }
+  100% {
+    transform: translate3d(120vw, 10vh, -100px) rotateZ(35deg);
+  }
+}
+
+.floating-orb {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(10,61,98,0.4) 0%, transparent 70%);
+  border-radius: 50%;
+  top: 20%;
+  right: 10%;
+  transform: translateZ(-400px);
+}
+
+/* ==========================================
+   CAPA DE LA INTERFAZ (POR ENCIMA DEL 3D)
+========================================== */
+.interface-wrapper {
+  position: relative;
+  z-index: 10;
+  max-width: 720px; /* Ancho optimizado para asemejarse a la captura */
+  margin: 100px auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px; /* Separación limpia entre bloques */
+}
+
+.demo-header {
+  background: linear-gradient(135deg, rgba(6, 32, 56, 0.9) 0%, rgba(9, 44, 77, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 35px 40px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+.demo-header h1 {
+  color: #E2B237; /* Tono dorado premium exacto */
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+}
+
+.demo-header p {
+  color: #B4C6D8;
+  font-size: 13.5px;
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.demo-card {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F4F7FA 100%);
+  color: #1E293B;
+  padding: 35px 40px;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.demo-card h3 {
+  color: #0A3D62;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.demo-card p {
+  color: #64748B;
+  font-size: 13px;
+  line-height: 1.7;
+}
+</style>
+</head>
+<body>
+
+  <!-- ENTORNO 3D INDEPENDIENTE -->
+  <div id="background-3d-universe">
+    <div class="grid-plane"></div>
+    <div class="floating-orb"></div>
+    
+    <div class="lizard-specimen">
+      <svg xmlns="http://w3.org" viewBox="0 0 100 100" fill="none">
+        <path d="M50,15 Q52,35 50,60 T48,85 Q47,95 50,100 Q46,92 46,85 T48,60 Q46,35 50,15 Z" fill="#1ABC9C" opacity="0.9"/>
+        <ellipse cx="50" cy="18" rx="5" ry="8" fill="#16A085"/>
+        <circle cx="48" cy="15" r="1" fill="#fff"/>
+        <circle cx="52" cy="15" r="1" fill="#fff"/>
+        <path d="M48,30 Q30,25 25,35" stroke="#1ABC9C" stroke-width="3" stroke-linecap="round"/>
+        <path d="M48,55 Q28,55 22,68" stroke="#1ABC9C" stroke-width="3" stroke-linecap="round"/>
+        <path d="M52,30 Q70,25 75,35" stroke="#1ABC9C" stroke-width="3" stroke-linecap="round"/>
+        <path d="M52,55 Q72,55 78,68" stroke="#1ABC9C" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="50" cy="35" r="2" fill="#D4AF37"/>
+        <circle cx="49" cy="45" r="1.5" fill="#D4AF37"/>
+        <circle cx="51" cy="55" r="2" fill="#D4AF37"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- CAPA SUPERIOR DE INTERFAZ -->
+  <div class="interface-wrapper">
+    <div class="demo-header">
+      <h1>Vista de Fondo 3D Integrada</h1>
+      <p>Prueba visual de profundidad. Los campos se mantienen al frente con filtros de desenfoque opacos para proteger la lectura de tus QR.</p>
+    </div>
+
+    <div class="demo-card">
+      <h3>Capa del Portafolio Principal</h3>
+      <p>Mientras navegas e interactúas con los códigos QR y menús de Spaservis, la lagartija y la malla tridimensional interactúan en un plano virtual infinitamente posicionado al fondo, creando un impacto visual inmersivo sin entorpecer los clics del usuario.</p>
+    </div>
+  </div>
+
+</body>
+</html>
