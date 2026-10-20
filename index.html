@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0A3D62">
+<meta name="description" content="Portafolio académico y tecnológico con acceso mediante códigos QR, proyectos digitales y navegación integrada Spaservis.">
+<title>Portafolio Académico & Salud | Spaservis QR</title>
+
+<!-- Cargando qrcode.js desde CDN estable -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+<style>
+:root {
+  --azul: #0A3D62;
+  --azul-oscuro: #062744;
+  --dorado: #D4AF37;
+  --turquesa: #1ABC9C;
+  --fondo: #F1F5F9;
+  --blanco: #FFFFFF;
+  --texto: #172033;
+  --borde: #D9E2EC;
+  --sombra: 0 12px 35px rgba(10,61,98,.13);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 85px;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--fondo);
+  color: var(--texto);
+  overflow-x: hidden;
+  padding-bottom: 65px;
+}
+
+button, a {
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--dorado);
+  outline-offset: 4px;
+}
+
+/* ==========================================
+   NAVEGACIÓN GLOBAL SPASERVIS
+========================================== */
+#global-navigation {
+  --nav-bg: rgba(6, 39, 68, .98);
+  --nav-text: #fff;
+  --nav-accent: #1ABC9C;
+
+  position: sticky;
+  top: 0;
+  z-index: 9999;
+  width: 100%;
+  color: var(--nav-text);
+  background: var(--nav-bg);
+  border-bottom: 3px solid var(--dorado);
+  box-shadow: 0 4px 18px rgba(0,0,0,.2);
+  backdrop-filter: blur(10px);
+}
+
+#global-navigation .nav-container {
+  width: 100%;
+  max-width: 1200px;
+  min-height: 60px;
+  margin: auto;
+  padding: 9px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#global-navigation .logo {
+  font-weight: bold;
+  font-size: 1.3rem;
+  color: var(--nav-text);
+}
+
+#global-navigation .logo span {
+  color: var(--dorado);
+}
+
+#global-navigation .nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+#global-navigation .nav-links a {
+  color: var(--nav-text);
+  font-size: 0.95rem;
+  transition: color 0.3s ease;
+}
+
+#global-navigation .nav-links a:hover {
+  color: var(--nav-accent);
+}
+
+/* ==========================================
+   CONTENIDO PRINCIPAL & PORTAFOLIO
+========================================== */
+.hero {
+  background: linear-gradient(135deg, var(--azul-oscuro), var(--azul));
+  color: var(--blanco);
+  text-align: center;
+  padding: 60px 20px;
+  border-bottom-right-radius: 50px;
+  border-bottom-left-radius: 50px;
+}
+
+.hero h1 {
+  font-size: 2.2rem;
+  margin-bottom: 10px;
+}
+
+.hero p {
+  color: #CBD5E1;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.main-container {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.grid-proyectos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+.card {
+  background: var(--blanco);
+  border-radius: 16px;
+  border: 1px solid var(--borde);
+  box-shadow: var(--sombra);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.card-info h3 {
+  color: var(--azul-oscuro);
+  font-size: 1.4rem;
+  margin-bottom: 10px;
+}
+
+.card-info p {
+  color: #64748B;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.qr-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  background: var(--fondo);
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+/* Contenedor adaptativo para asegurar el centrado del QR */
+.qr-box {
+  width: 160px;
+  height: 160px;
+  background: white;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--azul);
+}
+
+.btn-acceso {
+  display: inline-block;
+  text-align: center;
+  background: var(--azul);
+  color: var(--blanco);
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: background 0.3s ease;
+  width: 100%;
+}
+
+.btn-acceso:hover {
+  background: var(--turquesa);
+}
+
+/* ==========================================
+   FOOTER FIJO (MÓVIL-FRIENDLY)
+========================================== */
+footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: var(--azul-oscuro);
+  color: var(--blanco);
+  text-align: center;
+  padding: 15px;
+  font-size: 0.85rem;
+  border-top: 2px solid var(--dorado);
+  z-index: 999;
+}
+
+@media (max-width: 600px) {
+  #global-navigation .nav-links {
+    display: none; /* Simplificado para móviles */
+  }
+  .hero h1 {
+    font-size: 1.8rem;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- Barra de navegación unificada -->
+<nav id="global-navigation">
+  <div class="nav-container">
+    <div class="logo">Spaservis<span>QR</span></div>
+    <div class="nav-links">
+      <a href="#proyectos">Proyectos</a>
+      <a href="#contacto">Soporte</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <h1>Portafolio Académico & Salud</h1>
+  <p>Accede de forma ágil y segura a nuestros servicios e historiales interactivos escaneando el código QR asignado.</p>
+</header>
+
+<main class="main-container" id="proyectos">
+  <div class="grid-proyectos">
+    
+    <!-- Tarjeta de Proyecto 1 -->
+    <div class="card">
+      <div class="card-info">
+        <h3>Historial Clínico Digital</h3>
+        <p>Acceso seguro para el paciente a sus diagnósticos, tratamientos y recetas en tiempo real.</p>
+      </div>
+      <div>
+        <div class="qr-section">
+          <div class="qr-box" id="qr-historial"></div>
+          <small style="color: var(--azul-oscuro); font-weight: 500;">Escanea para móvil</small>
+        </div>
+        <a href="https://spaservis.com" target="_blank" class="btn-acceso">Abrir en Navegador</a>
+      </div>
+    </div>
+
+    <!-- Tarjeta de Proyecto 2 -->
+    <div class="card">
+      <div class="card-info">
+        <h3>Plataforma de Citas</h3>
+        <p>Gestión automatizada de agendas médicas, recordatorios vía WhatsApp y asignación de turnos.</p>
+      </div>
+      <div>
+        <div class="qr-section">
+          <div class="qr-box" id="qr-citas"></div>
+          <small style="color: var(--azul-oscuro); font-weight: 500;">Escanea para móvil</small>
+        </div>
+        <a href="https://spaservis.com" target="_blank" class="btn-acceso">Solicitar Cita</a>
+      </div>
+    </div>
+
+    <!-- Tarjeta de Proyecto 3 -->
+    <div class="card">
+      <div class="card-info">
+        <h3>Control de Asistencia QR</h3>
+        <p>Módulo académico para el registro rápido de asistencia de estudiantes y personal de salud.</p>
+      </div>
+      <div>
+        <div class="qr-section">
+          <div class="qr-box" id="qr-asistencia"></div>
+          <small style="color: var(--azul-oscuro); font-weight: 500;">Escanea para móvil</small>
+        </div>
+        <a href="https://spaservis.com" target="_blank" class="btn-acceso">Validar Registro</a>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  &copy; 2026 Spaservis Tecnologías. Todos los derechos reservados.
+</footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // Configuración base de generación de QRs usando el CDN instanciado
+  const configQR = (text) => ({
+    text: text,
+    width: 150,
+    height: 150,
+    colorDark : "#0A3D62",
+    colorLight : "#FFFFFF",
+    correctLevel : QRCode.CorrectLevel.H
+  });
+
+  // Generación automática vinculada a los IDs correspondientes
+  new QRCode(document.getElementById("qr-historial"), configQR("https://spaservis.com"));
+  new QRCode(document.getElementById("qr-citas"), configQR("https://spaservis.com"));
+  new QRCode(document.getElementById("qr-asistencia"), configQR("https://spaservis.com"));
+});
+</script>
+
+</body>
+</html>
