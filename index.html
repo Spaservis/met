@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#061426">
+<meta name="description" content="Spaservis Portal Maestro 3D: proyectos académicos, salud, tecnología, servicios y gestión digital.">
+<title>Spaservis | Portal Maestro 3D</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- Supabase Client CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root{
+  --bg:#061426;--bg2:#0a2039;--panel:rgba(13,37,62,.82);
+  --panel2:#102d4a;--blue:#1677ff;--cyan:#40e8ff;
+  --gold:#f5c96a;--text:#eaf5ff;--muted:#a5bbd0;
+  --line:rgba(117,200,255,.19);--good:#56e6ac;--danger:#ff7789;
+  --radius:20px;--shadow:0 18px 55px #0005;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:88px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif;line-height:1.55;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;z-index:-3;background:
+radial-gradient(ellipse at 15% 10%,#0c3b6b 0,transparent 45%),
+radial-gradient(ellipse at 90% 50%,#09284b 0,transparent 45%),
+linear-gradient(145deg,#040d19,#07192d 60%,#061426)}
+button,input,select,textarea{font:inherit}
+button,a{ -webkit-tap-highlight-color:transparent }
+a{color:var(--cyan);text-decoration:none}
+a:hover{color:#fff}
+button{cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+button:disabled{opacity:.45;cursor:not-allowed}
+#starfield{position:fixed;inset:0;width:100%;height:100%;z-index:-2;pointer-events:none}
+.grid-floor{position:fixed;left:-20%;right:-20%;bottom:-25%;height:65%;z-index:-1;pointer-events:none;
+background-image:linear-gradient(#35cfff16 1px,transparent 1px),linear-gradient(90deg,#35cfff16 1px,transparent 1px);
+background-size:44px 44px;transform:perspective(300px) rotateX(58deg);mask-image:linear-gradient(transparent,#000)}
+header{position:sticky;top:0;z-index:50;background:#061426dd;backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+.nav{max-width:1450px;margin:auto;padding:12px 22px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:11px;min-width:220px}
+.brand-mark{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;
+background:linear-gradient(135deg,var(--blue),#06284b 70%);border:1px solid #65dfff77;
+box-shadow:0 0 24px #17bfff36;font-size:23px}
+.brand strong{font-family:Orbitron,sans-serif;letter-spacing:1px;font-size:15px}
+.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:2px}
+.navlinks{display:flex;gap:5px;align-items:center;flex:1;flex-wrap:wrap}
+.navlinks a{font-size:12px;color:#d3e6f6;padding:9px 10px;border-radius:10px}
+.navlinks a:hover{background:#1b4262;color:var(--cyan)}
+.nav-actions{display:flex;gap:7px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line);
+border-radius:12px;padding:10px 14px;background:#102b46;color:var(--text);font-weight:700;font-size:12px;transition:.2s}
+.btn:hover{transform:translateY(-2px);border-color:var(--cyan);box-shadow:0 6px 22px #00cfff22}
+.btn.primary{background:linear-gradient(115deg,#1262db,#087d9e);border-color:#57dfff88}
+.btn.gold{background:linear-gradient(120deg,#dba744,#ffe6a2);color:#18202b;border-color:transparent}
+.btn.danger{border-color:#ff778955;color:#ff9cac}
+.icon-btn{width:40px;height:40px;padding:0;font-size:17px}
+main{max-width:1450px;margin:auto;padding:22px}
+.hero{min-height:500px;display:grid;grid-template-columns:1.1fr .9fr;align-items:center;gap:22px;padding:35px 0 50px}
+.eyebrow{color:var(--cyan);font-size:11px;letter-spacing:3px;font-weight:800;text-transform:uppercase}
+.hero h1{font-family:Orbitron,sans-serif;font-size:clamp(32px,5vw,65px);line-height:1.1;letter-spacing:-1.8px;margin:17px 0}
+.hero h1 span{color:var(--cyan);text-shadow:0 0 28px #28cfff45}
+.hero p{max-width:650px;color:var(--muted);font-size:15px}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:25px}
+.pill{font-size:11px;color:#c4d8e9;border:1px solid var(--line);background:#0b2037a8;padding:7px 11px;border-radius:30px}
+.scene-wrap{position:relative;min-height:410px;display:grid;place-items:center;perspective:900px}
+#scene3d{width:100%;height:410px;display:block}
+.scene-hud{position:absolute;inset:auto 5% 8% 5%;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
+.hud-chip{background:#061426bd;border:1px solid #3cdfff55;backdrop-filter:blur(8px);border-radius:12px;padding:10px 13px;font-size:10px;color:#bcecff}
+.hud-chip strong{display:block;font-family:Orbitron,sans-serif;color:var(--cyan);font-size:12px}
+.section{padding:36px 0}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:18px;margin-bottom:20px}
+.section-head h2{font-family:Orbitron,sans-serif;font-size:clamp(21px,3vw,30px);margin:5px 0}
+.section-head p{margin:0;color:var(--muted);font-size:13px}
+.section-kicker{font-size:10px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;font-weight:800}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}
+.stat,.card,.panel{background:linear-gradient(145deg,#102d49df,#091c30e8);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.stat{padding:20px;position:relative;overflow:hidden}
+.stat:after{content:"";position:absolute;width:90px;height:90px;right:-30px;top:-30px;border:1px solid #38dfff24;border-radius:50%;box-shadow:0 0 0 14px #38dfff08,0 0 0 28px #38dfff05}
+.stat span{color:var(--muted);font-size:11px}
+.stat strong{display:block;font-family:Orbitron,sans-serif;font-size:28px;margin-top:8px;color:var(--cyan)}
+.stat small{color:var(--gold);font-size:10px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+.field{width:100%;background:#06172a;color:var(--text);border:1px solid #326080;border-radius:11px;padding:11px 12px;min-width:0}
+.field::placeholder{color:#7795ae}
+.search{flex:1;min-width:200px}
+.filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:20px}
+.filter{padding:8px 12px;border-radius:30px;background:#0c2137;color:#a9c2d8;border:1px solid var(--line);font-size:11px}
+.filter.active{background:#087ca1;color:#fff;border-color:var(--cyan)}
+.project-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.project-card{padding:19px;position:relative;overflow:hidden;transform-style:preserve-3d;transition:transform .25s,border-color .25s;min-height:235px}
+.project-card:hover{transform:translateY(-6px) rotateX(1deg);border-color:#40e8ff66}
+.project-card:before{content:"";position:absolute;width:160px;height:160px;right:-95px;top:-95px;border:1px solid #40e8ff26;border-radius:50%;box-shadow:0 0 0 18px #40e8ff07,0 0 0 38px #40e8ff05;pointer-events:none}
+.card-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.project-icon{width:45px;height:45px;border-radius:14px;background:linear-gradient(140deg,#126bd1,#0c344f);display:grid;place-items:center;font-size:22px;border:1px solid #5adfff50}
+.tag{font-size:9px;padding:5px 8px;border-radius:30px;background:#0c5a6277;color:#79f3e7;border:1px solid #5be8de33}
+.project-card h3{font-size:16px;margin:15px 0 6px}
+.project-card p{font-size:12px;color:var(--muted);min-height:38px;margin:0}
+.project-meta{display:flex;justify-content:space-between;gap:8px;color:#8eabc4;font-size:10px;margin-top:13px}
+.card-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:15px}
+.card-actions .btn{padding:8px 10px;font-size:11px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.panel{padding:22px}
+.panel h3{margin:0 0 8px;font-size:16px}
+.panel>p{color:var(--muted);font-size:12px}
+.timeline{position:relative;padding-left:22px;margin-top:20px}
+.timeline:before{content:"";position:absolute;left:5px;top:4px;bottom:4px;width:2px;background:linear-gradient(var(--cyan),#2766ad,transparent)}
+.timeline-item{position:relative;padding:0 0 22px 15px}
+.timeline-item:before{content:"";position:absolute;left:-21px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--cyan);box-shadow:0 0 15px #40e8ff88}
+.timeline-item time{font-size:10px;color:var(--gold)}
+.timeline-item h4{font-size:13px;margin:3px 0}
+.timeline-item p{font-size:11px;color:var(--muted);margin:0}
+.area-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.area{padding:17px;border:1px solid var(--line);background:#0c2238d9;border-radius:16px;transition:.2s}
+.area:hover{transform:translateY(-4px);border-color:var(--cyan)}
+.area .emoji{font-size:25px}
+.area h3{font-size:13px;margin:9px 0 4px}
+.area p{font-size:11px;color:var(--muted);margin:0}
+.qr-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.qr-box{padding:23px;text-align:center;min-width:0}
+.qr-box .field{text-align:left;margin:8px 0}
+.qr-canvas{margin:16px auto;width:200px;min-height:200px;background:#fff;border-radius:12px;padding:10px;display:grid;place-items:center;overflow:hidden}
+.qr-canvas img,.qr-canvas canvas{max-width:100%;height:auto!important}
+.qr-note{font-size:11px;color:var(--muted)}
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-grid .full{grid-column:1/-1}
+label{display:block;color:#b4c9dc;font-size:11px;margin-bottom:5px}
+.form-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.table-wrap{overflow:auto}
+table{border-collapse:collapse;width:100%;font-size:11px;min-width:520px}
+th,td{text-align:left;padding:11px;border-bottom:1px solid var(--line)}
+th{color:var(--cyan);font-size:10px}
+td{color:#c2d6e8}
+.empty{padding:25px;text-align:center;color:var(--muted);font-size:13px;border:1px dashed var(--line);border-radius:15px}
+.callout{padding:15px;border-radius:14px;border:1px solid #f5c96a44;background:#f5c96a0a;color:#d9e7f3;font-size:12px}
+footer{border-top:1px solid var(--line);padding:25px 20px;text-align:center;color:#8ba5bd;font-size:11px}
+.toast{position:fixed;right:18px;bottom:18px;z-index:200;max-width:min(360px,90vw);padding:14px 17px;border-radius:13px;background:#123957;border:1px solid var(--cyan);box-shadow:var(--shadow);font-size:12px;display:none}
+.toast.show{display:block;animation:pop .2s ease}
+@keyframes pop{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes glow{0%,100%{filter:drop-shadow(0 0 5px #40e8ff22)}50%{filter:drop-shadow(0 0 15px #40e8ff66)}}
+.orb{animation:glow 4s ease-in-out infinite}
+.hidden{display:none!important}
+hr{border:0;border-top:1px solid var(--line);margin:20px 0}
+#improvementFrame{display:block;width:100%;height:950px;border:1px solid var(--line);border-radius:18px;background:#061426}
+.accessibility{display:flex;gap:8px;flex-wrap:wrap}
+body.light{
+ --bg:#edf5fc;--bg2:#e1edf8;--panel:#fff;--panel2:#e7f1fb;
+ --text:#13283e;--muted:#526c84;--line:#b7d0e3;
+ background:#edf5fc;color:var(--text)
+}
+body.light:before{background:radial-gradient(ellipse at 10% 10%,#d6efff,transparent 45%),linear-gradient(135deg,#edf5fc,#dfeaf6)}
+body.light header{background:#f3f9f9ed}
+body.light .navlinks a{color:#1c3850}
+body.light .stat,body.light .card,body.light .panel,body.light .area,body.light .project-card{background:#ffffffed}
+body.light .field{background:#f7fbff;color:#122a42}
+body.light .filter{background:#edf5fc;color:#31516c}
+body.light .filter.active{background:#087ca1;color:#fff}
+body.light .btn{background:#e4eff8;color:#17334b}
+body.light .btn.primary{background:#1262db;color:white}
+body.light .grid-floor{opacity:.35}
+@media(max-width:1000px){
+ .nav{flex-wrap:wrap}.brand{flex:1}.navlinks{order:3;flex-basis:100%;overflow-x:auto;flex-wrap:nowrap}
+ .hero{grid-template-columns:1fr;padding-top:24px}.scene-wrap{min-height:330px}#scene3d{height:330px}
+ .project-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.area-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:650px){
+ main{padding:15px}.nav{padding:10px 13px}.brand{min-width:0}.brand strong{font-size:13px}
+ .nav-actions .label-hide{display:none}.navlinks a{padding:8px;font-size:11px}
+ .hero{min-height:unset;gap:0;padding:30px 0}.hero h1{font-size:36px}.hero p{font-size:13px}
+ .scene-wrap{min-height:280px}#scene3d{height:280px}
+ .stats{grid-template-columns:repeat(2,1fr)}.stat{padding:15px}.stat strong{font-size:23px}
+ .project-grid,.two-col,.qr-grid,.admin-grid{grid-template-columns:1fr}
+ .area-grid{grid-template-columns:repeat(2,1fr)}.section{padding:25px 0}
+ .section-head{align-items:start;flex-direction:column}.panel{padding:16px}
+ .form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}
+ #improvementFrame{height:1120px}
+}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+
+<body>
+<canvas id="starfield" aria-hidden="true"></canvas>
+<div class="grid-floor" aria-hidden="true"></div>
+
+<header>
+  <nav class="nav" aria-label="Navegación principal">
+    <a class="brand" href="#inicio" aria-label="Spaservis, ir al inicio">
+      <span class="brand-mark">✦</span>
+      <span><strong>SPASERVIS</strong><small>PORTAL MAESTRO 3D</small></span>
+    </a>
+    <div class="navlinks">
+      <a href="#inicio">Inicio</a>
+      <a href="#proyectos">Proyectos</a>
+      <a href="#ecosistema">Ecosistema</a>
+      <a href="#linea-tiempo">Línea de tiempo</a>
+      <a href="#qr">Códigos QR</a>
+      <a href="#administracion">Administración</a>
+      <a href="#centro-mejoras">Centro de mejoras</a>
+    </div>
+    <div class="nav-actions">
+      <span id="authStatusIndicator" class="pill" style="font-size:10px; display:inline-flex; align-items:center; gap:5px; background:#0c2238;">🔴 Sin autenticar</span>
+      <button class="btn" id="authModalBtn" style="padding:6px 10px; font-size:11px;">Acceder</button>
+      <button class="btn icon-btn" id="themeBtn" title="Cambiar tema" aria-label="Cambiar tema">☼</button>
+      <button class="btn icon-btn" id="speakBtn" title="Leer página en voz alta" aria-label="Leer página en voz alta">🔊</button>
+    </div>
+  </nav>
+</header>
+
+<!-- Modal de Autenticación Supabase -->
+<div id="authModal" class="hidden" style="position:fixed; inset:0; z-index:999; background:rgba(3,10,18,0.85); display:grid; place-items:center; backdrop-filter:blur(8px);">
+  <div class="panel" style="width:100%; max-width:400px; position:relative;">
+    <h3 style="margin-top:0">Autenticación Supabase</h3>
+    <p id="authUserInfo" style="margin-bottom:12px;">Inicia sesión con correo y contraseña para sincronizar tus proyectos en la nube.</p>
+    <div id="authFormContainer">
+      <div style="margin-bottom:10px;">
+        <label for="authEmail">Correo electrónico</label>
+        <input class="field" type="email" id="authEmail" placeholder="usuario@correo.com">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label for="authPassword">Contraseña</label>
+        <input class="field" type="password" id="authPassword" placeholder="••••••••">
+      </div>
+      <div class="form-actions" style="justify-content:space-between;">
+        <button class="btn primary" id="loginBtn">Iniciar sesión</button>
+        <button class="btn" id="registerBtn">Registrarse</button>
+      </div>
+    </div>
+    <div id="authLoggedContainer" class="hidden">
+      <p id="loggedUserEmail" style="color:var(--cyan); font-weight:bold; margin-bottom:15px;"></p>
+      <div class="form-actions">
+        <button class="btn primary" id="syncSupabaseBtn">🔄 Sincronizar con Supabase</button>
+        <button class="btn danger" id="logoutBtn">Cerrar sesión</button>
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:15px; justify-content:flex-end;">
+      <button class="btn" id="closeAuthModal">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<main>
+<section class="hero" id="inicio">
+  <div>
+    <div class="eyebrow">Tecnología con propósito · Experiencia inmersiva</div>
+    <h1>Ideas que se convierten en <span>ecosistemas digitales.</span></h1>
+    <p>Un centro de navegación para proyectos académicos, salud pública, analítica, servicios y soluciones tecnológicas. Organiza tus iniciativas, genera códigos QR y documenta la evolución de cada proyecto desde un solo lugar.</p>
+    <div class="hero-actions">
+      <a class="btn primary" href="#proyectos">⌘ Explorar proyectos</a>
+      <a class="btn" href="#centro-mejoras">✧ Proponer una mejora</a>
+      <button class="btn gold" id="voiceSearchBtn">🎙 Buscar por voz</button>
+    </div>
+    <div class="pills">
+      <span class="pill">◈ Diseño 3D adaptable</span>
+      <span class="pill">◈ Supabase + LocalStorage</span>
+      <span class="pill">◈ Portal modular</span>
+      <span class="pill">◈ Exportación JSON / CSV</span>
+    </div>
+  </div>
+  <div class="scene-wrap orb">
+    <canvas id="scene3d" aria-label="Escena tridimensional animada del portal Spaservis"></canvas>
+    <div class="scene-hud">
+      <div class="hud-chip"><strong>SPX / 3D</strong>Entorno digital</div>
+      <div class="hud-chip"><strong id="liveClock">--:--:--</strong>Hora local</div>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-label="Resumen del portal">
+  <div class="stats">
+    <div class="stat"><span>Proyectos registrados</span><strong id="statProjects">0</strong><small>Catálogo local</small></div>
+    <div class="stat"><span>Áreas de trabajo</span><strong>04</strong><small>Multidisciplinario</small></div>
+    <div class="stat"><span>Hitos de la línea de tiempo</span><strong id="statMilestones">0</strong><small>Seguimiento</small></div>
+    <div class="stat"><span>Instrucciones guardadas</span><strong id="statInstructions">0</strong><small>Centro de mejoras</small></div>
+  </div>
+</section>
+
+<section class="section" id="proyectos">
+  <div class="section-head">
+    <div><div class="section-kicker">01 / Catálogo digital</div><h2>Proyectos y herramientas</h2><p>Busca, filtra y organiza los accesos del ecosistema Spaservis.</p></div>
+    <button class="btn primary" id="newProjectBtn">＋ Nuevo proyecto</button>
+  </div>
+  <div class="toolbar">
+    <input class="field search" id="searchInput" placeholder="Buscar por nombre, categoría o descripción…" aria-label="Buscar proyectos">
+    <select class="field" id="sortSelect" style="max-width:190px" aria-label="Ordenar proyectos">
+      <option value="name">Orden alfabético</option>
+      <option value="category">Por categoría</option>
+      <option value="newest">Más recientes</option>
+    </select>
+    <button class="btn" id="clearSearchBtn">Limpiar</button>
+  </div>
+  <div class="filters" id="filters"></div>
+  <div class="project-grid" id="projectGrid"></div>
+  <div class="empty hidden" id="noProjects">No hay proyectos que coincidan con la búsqueda.</div>
+</section>
+
+<section class="section" id="ecosistema">
+  <div class="section-head">
+    <div><div class="section-kicker">02 / Áreas de conocimiento</div><h2>Un ecosistema, múltiples soluciones</h2><p>Conecta herramientas, aprendizaje, gestión e innovación social.</p></div>
+  </div>
+  <div class="area-grid">
+    <article class="area"><div class="emoji">🩺</div><h3>Salud pública</h3><p>Información en salud, RIPS, indicadores, gestión de calidad y análisis poblacional.</p></article>
+    <article class="area"><div class="emoji">📊</div><h3>Datos y analítica</h3><p>R, SQL, Power BI, visualización, investigación y apoyo a la toma de decisiones.</p></article>
+    <article class="area"><div class="emoji">🦺</div><h3>Seguridad y trabajo</h3><p>SG-SST, inspecciones, listas de verificación y herramientas para operaciones.</p></article>
+    <article class="area"><div class="emoji">⚡</div><h3>Ingeniería digital</h3><p>Automatización, páginas web, QR, prototipos y experiencias interactivas.</p></article>
+  </div>
+</section>
+
+<section class="section" id="linea-tiempo">
+  <div class="section-head">
+    <div><div class="section-kicker">03 / Evolución del ecosistema</div><h2>Línea de tiempo</h2><p>Registra decisiones, avances y nuevas versiones de los proyectos.</p></div>
+    <button class="btn" id="newMilestoneBtn">＋ Registrar hito</button>
+  </div>
+  <div class="two-col">
+    <div class="panel"><h3>Trayectoria del portal</h3><p>Los hitos se almacenan en este navegador y pueden respaldarse con Supabase.</p><div class="timeline" id="timeline"></div></div>
+    <div class="panel">
+      <h3>Principios de diseño</h3>
+      <p>Una arquitectura útil debe permitir crecer sin perder claridad ni control sobre los datos.</p>
+      <div class="callout"><strong>01 · Modularidad</strong><br>Separar las responsabilidades de navegación, proyectos e instrucciones.</div><hr>
+      <div class="callout"><strong>02 · Trazabilidad</strong><br>Registrar cambios y mantener respaldos antes de modificar información.</div><hr>
+      <div class="callout"><strong>03 · Seguridad</strong><br>Validar los datos importados y utilizar clave pública segura con RLS.</div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="qr">
+  <div class="section-head">
+    <div><div class="section-kicker">04 / Acceso universal</div><h2>Laboratorio de códigos QR</h2><p>Genera dos QR independientes para compartir proyectos, páginas o recursos.</p></div>
+  </div>
+  <div class="qr-grid">
+    <div class="panel qr-box">
+      <h3>QR 01 · Portal principal</h3><p class="qr-note">Pega una dirección pública o usa la dirección actual.</p>
+      <input class="field" id="qrUrl1" placeholder="https://tusitio.com" aria-label="Dirección para QR principal">
+      <input class="field" id="qrLabel1" placeholder="Nombre del recurso (opcional)" aria-label="Nombre del QR principal">
+      <div class="qr-canvas" id="qrOutput1"><span style="color:#444;font-size:12px">Tu QR aparecerá aquí</span></div>
+      <div class="form-actions" style="justify-content:center">
+        <button class="btn primary" id="makeQr1">Generar QR</button><button class="btn" id="downloadQr1">Descargar PNG</button>
+      </div>
+    </div>
+    <div class="panel qr-box">
+      <h3>QR 02 · Proyecto destacado</h3><p class="qr-note">Usa una dirección distinta para crear un segundo acceso.</p>
+      <input class="field" id="qrUrl2" placeholder="https://tusitio.com/proyecto" aria-label="Dirección para QR de proyecto">
+      <input class="field" id="qrLabel2" placeholder="Nombre del recurso (opcional)" aria-label="Nombre del QR de proyecto">
+      <div class="qr-canvas" id="qrOutput2"><span style="color:#444;font-size:12px">Tu QR aparecerá aquí</span></div>
+      <div class="form-actions" style="justify-content:center">
+        <button class="btn primary" id="makeQr2">Generar QR</button><button class="btn" id="downloadQr2">Descargar PNG</button>
+      </div>
+    </div>
+  </div>
+  <p class="qr-note">Un QR que apunta a una dirección local como <code>file:///</code> puede no funcionar en otros dispositivos. Para compartirlo, utiliza una URL pública accesible.</p>
+</section>
+
+<section class="section" id="administracion">
+  <div class="section-head">
+    <div><div class="section-kicker">05 / Control del portal</div><h2>Administración y respaldos</h2><p>Gestiona el catálogo, sincroniza con Supabase y guarda copias locales.</p></div>
+  </div>
+  <div class="admin-grid">
+    <div class="panel">
+      <h3>Crear o editar proyecto</h3>
+      <p>Completa los datos. Las modificaciones se guardan localmente y se pueden sincronizar con Supabase.</p>
+      <form id="projectForm">
+        <input type="hidden" id="projectId">
+        <div class="form-grid">
+          <div class="full"><label for="pName">Nombre del proyecto *</label><input class="field" id="pName" required maxlength="100" placeholder="Ej. Sistema de gestión"></div>
+          <div><label for="pCategory">Categoría</label><select class="field" id="pCategory"><option>Salud</option><option>Datos</option><option>Servicios</option><option>Educación</option><option>Tecnología</option><option>SG-SST</option><option>Personal</option><option>Otro</option></select></div>
+          <div><label for="pIcon">Icono</label><input class="field" id="pIcon" maxlength="8" value="🚀"></div>
+          <div class="full"><label for="pDescription">Descripción</label><textarea class="field" id="pDescription" rows="3" maxlength="500" placeholder="¿Qué resuelve este proyecto?"></textarea></div>
+          <div class="full"><label for="pUrl">Enlace (URL o archivo HTML)</label><input class="field" id="pUrl" placeholder="https://… o rutero.html"></div>
+          <div class="full"><label for="pStatus">Estado</label><select class="field" id="pStatus"><option>En desarrollo</option><option>Activo</option><option>Planificado</option><option>En revisión</option><option>Archivado</option></select></div>
+        </div>
+        <div class="form-actions"><button class="btn primary" type="submit">Guardar proyecto</button><button class="btn" type="button" id="resetProjectForm">Limpiar formulario</button></div>
+      </form>
+    </div>
+    <div class="panel">
+      <h3>Registrar hito</h3>
+      <p>Documenta una decisión, corrección, publicación o idea relevante.</p>
+      <form id="milestoneForm">
+        <div class="form-grid">
+          <div class="full"><label for="mTitle">Título *</label><input class="field" id="mTitle" required maxlength="120" placeholder="Ej. Nueva versión del portal"></div>
+          <div><label for="mDate">Fecha</label><input class="field" id="mDate" type="date"></div>
+          <div><label for="mProject">Proyecto relacionado</label><select class="field" id="mProject"><option value="">General</option></select></div>
+          <div class="full"><label for="mDescription">Descripción</label><textarea class="field" id="mDescription" rows="3" maxlength="500" placeholder="¿Qué cambió o qué falta por hacer?"></textarea></div>
+        </div>
+        <div class="form-actions"><button class="btn primary" type="submit">Guardar hito</button><button class="btn" type="button" id="resetMilestoneForm">Limpiar</button></div>
+      </form>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <h3>Datos y respaldo</h3>
+    <p>Exporta un archivo JSON, sincroniza con Supabase o importa una copia previamente exportada.</p>
+    <div class="form-actions">
+      <button class="btn primary" id="syncSupabasePanelBtn">🔄 Sincronizar Supabase</button>
+      <button class="btn" id="exportJson">⇩ Exportar JSON</button>
+      <button class="btn" id="exportCsv">⇩ Exportar proyectos CSV</button>
+      <button class="btn" id="importBtn">⇧ Importar JSON</button>
+      <input type="file" id="importFile" accept=".json,application/json" class="hidden">
+      <button class="btn" id="printBtn">Imprimir / PDF</button>
+      <button class="btn danger" id="resetData">Restaurar datos iniciales</button>
+    </div>
+    <hr>
+    <div class="table-wrap"><table><thead><tr><th>Elemento</th><th>Detalle</th><th>Acción</th></tr></thead><tbody id="adminTable"></tbody></table></div>
+  </div>
+</section>
+
+<section class="section" id="centro-mejoras">
+  <div class="section-head">
+    <div><div class="section-kicker">06 / Módulo conectado</div><h2>Centro de mejoras e instrucciones</h2><p>Un segundo documento HTML integrado al mismo archivo, con su propio espacio de trabajo.</p></div>
+  </div>
+  <div class="callout" style="margin-bottom:14px">
+    <strong>Cómo funciona:</strong> registra instrucciones, define prioridades y conserva un historial. El módulo puede enviar mensajes al portal para actualizar el registro de instrucciones. Guardar una instrucción no modifica automáticamente el código fuente: debes aplicar y probar la mejora en una versión del HTML.
+  </div>
+  <iframe id="improvementFrame" title="Centro de mejoras Spaservis, módulo HTML conectado" sandbox="allow-scripts allow-forms allow-same-origin" loading="lazy"></iframe>
+</section>
+</main>
+
+<footer>
+  <div style="font-family:Orbitron,sans-serif;letter-spacing:2px;color:var(--cyan)">SPASERVIS · PORTAL MAESTRO 3D</div>
+  <p>Tecnología con propósito es justicia social.</p>
+  <p>Versión local y Supabase · <span id="footerYear"></span></p>
+</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+// Configuración correcta de Supabase con clave pública y manejo de errores seguro
+const SUPABASE_URL = "https://ewepuftyygkhqfoqxufh.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_u1ueefVFlcFwNBgdHvCoMQ_gLRhV7KN";
+
+let supabaseClient = null;
+try {
+  if (window.supabase && typeof window.supabase.createClient === "function") {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch (err) {
+  console.warn("No se pudo inicializar el cliente de Supabase:", err);
+}
+
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const PROJECT_KEY = "spaservis_portal_maestro_v3";
+const THEME_KEY = "spaservis_theme_v1";
+const INSTRUCTION_KEY = "spaservis_instructions_v1";
+const MILESTONE_KEY = "spaservis_milestones_v1";
+
+const initialProjects = [
+ {id:"p01",name:"Portafolio académico y salud",category:"Educación",icon:"🎓",description:"Portal de presentación académica, recursos y proyectos digitales.",url:"index3001118739.html",status:"Activo",updated:Date.now()},
+ {id:"p02",name:"Juego de tarjetas",category:"Educación",icon:"🃏",description:"Experiencia de tarjetas para aprendizaje e interacción.",url:"Juego-de-Tarjetas",status:"En desarrollo",updated:Date.now()},
+ {id:"p03",name:"La Ferrer · Citas",category:"Servicios",icon:"💈",description:"Agenda de citas y servicios de barbería.",url:"https://spaservis.github.io/Cita/#reservar",status:"Activo",updated:Date.now()},
+ {id:"p04",name:"Talonario digital",category:"Servicios",icon:"🎟️",description:"Herramienta digital para control de talonarios.",url:"Talonario",status:"En desarrollo",updated:Date.now()},
+ {id:"p05",name:"Gestión de domicilios",category:"Servicios",icon:"🛵",description:"Registro y consulta de operaciones de entrega.",url:"Domicilio",status:"En desarrollo",updated:Date.now()},
+ {id:"p06",name:"Sistema de gestión",category:"Tecnología",icon:"🧭",description:"Panel central de navegación y herramientas operativas.",url:"sistemaDegestion",status:"En desarrollo",updated:Date.now()},
+ {id:"p07",name:"Administración",category:"Tecnología",icon:"⚙️",description:"Acceso a herramientas administrativas del ecosistema.",url:"administracion",status:"En desarrollo",updated:Date.now()},
+ {id:"p08",name:"Gestión de pedidos",category:"Servicios",icon:"📦",description:"Registro, seguimiento e historial de pedidos.",url:"pedido.html",status:"En desarrollo",updated:Date.now()},
+ {id:"p09",name:"Rutero digital",category:"Servicios",icon:"🗺️",description:"Herramientas de seguimiento para operación logística.",url:"rutero.html",status:"En desarrollo",updated:Date.now()},
+ {id:"p10",name:"Sistema Integrado Logístico",category:"Tecnología",icon:"🚚",description:"Integración de logística, pedidos y rutero.",url:"index.html",status:"En desarrollo",updated:Date.now()},
+ {id:"p11",name:"SG-SST C.O.R.A.L PRO",category:"SG-SST",icon:"🦺",description:"Modelo digital para gestión de seguridad y salud en el trabajo.",url:"",status:"Planificado",updated:Date.now()},
+ {id:"p12",name:"RIPS y gestión en salud",category:"Salud",icon:"🩺",description:"Apoyo a procesos de información, calidad y gestión en salud.",url:"",status:"Planificado",updated:Date.now()},
+ {id:"p13",name:"Tablero de indicadores",category:"Datos",icon:"📊",description:"Diseño de indicadores y visualizaciones para análisis.",url:"",status:"Planificado",updated:Date.now()},
+ {id:"p14",name:"Analítica de salud mental",category:"Datos",icon:"🧠",description:"Proyecto de análisis sociodemográfico y clínico en salud mental.",url:"",status:"En desarrollo",updated:Date.now()},
+ {id:"p15",name:"Confecciones Magnus",category:"Servicios",icon:"🧵",description:"Catálogo digital y organización de productos textiles.",url:"",status:"Planificado",updated:Date.now()},
+ {id:"p16",name:"Panel de entrega QR",category:"Tecnología",icon:"🔳",description:"Panel de apoyo para entrega de recursos mediante códigos QR.",url:"",status:"En desarrollo",updated:Date.now()},
+ {id:"p17",name:"Ciencia de datos",category:"Datos",icon:"🧮",description:"Recursos y flujos de trabajo de análisis de datos.",url:"",status:"Planificado",updated:Date.now()},
+ {id:"p18",name:"Instalaciones eléctricas",category:"Tecnología",icon:"⚡",description:"Materiales de aprendizaje y herramientas de apoyo eléctrico.",url:"",status:"Planificado",updated:Date.now()},
+ {id:"p19",name:"Gestión de PQRS",category:"Salud",icon:"📄",description:"Organización de peticiones, quejas, reclamos y seguimiento.",url:"",status:"Planificado",updated:Date.now()},
+ {id:"p20",name:"Centro de mejoras",category:"Tecnología",icon:"✨",description:"Módulo conectado para documentar instrucciones de evolución.",url:"#centro-mejoras",status:"Activo",updated:Date.now()}
+];
+
+const initialMilestones = [
+ {id:"m01",title:"Estructura inicial del portal",date:"2026-10-01",projectId:"p01",description:"Organización del catálogo de proyectos y accesos."},
+ {id:"m02",title:"Integración de navegación",date:"2026-10-15",projectId:"p01",description:"Centralización de herramientas y áreas de trabajo."},
+ {id:"m03",title:"Portal Maestro 3D",date:localDate(),projectId:"p01",description:"Incorporación de escena 3D, QR y Centro de Mejoras."}
+];
+
+function localDate(){
+ const d=new Date();
+ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function safeRead(key,fallback){
+ try{const v=JSON.parse(localStorage.getItem(key));return v===null?fallback:v;}
+ catch{return fallback;}
+}
+function safeWrite(key,value){
+ try{localStorage.setItem(key,JSON.stringify(value));return true;}
+ catch{notify("No fue posible guardar. Comprueba el espacio disponible del navegador.");return false;}
+}
+function uid(prefix){return prefix+"_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,7);}
+function esc(value){
+ return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function validLink(raw){
+ const value=String(raw||"").trim();
+ if(!value)return "";
+ if(/^https?:\/\/[^\s]+$/i.test(value))return value;
+ if(/^#[a-z0-9_-]+$/i.test(value))return value;
+ if(/^[a-z0-9_.-]+\.html(?:#[a-z0-9_-]+)?$/i.test(value))return value;
+ return "";
+}
+
+let projects = safeRead(PROJECT_KEY,initialProjects);
+let milestones = safeRead(MILESTONE_KEY,initialMilestones);
+if(!Array.isArray(projects))projects=initialProjects.slice();
+if(!Array.isArray(milestones))milestones=initialMilestones.slice();
+let activeCategory="Todas";
+let editingId=null;
+let toastTimer;
+
+function notify(message){
+ const t=$("toast");t.textContent=message;t.classList.add("show");
+ clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),3200);
+}
+function persist(){
+ safeWrite(PROJECT_KEY,projects);safeWrite(MILESTONE_KEY,milestones);render();
+}
+
+// ==========================================
+// SUPABASE & AUTHENTICATION LOGIC
+// ==========================================
+let currentUser = null;
+
+async function checkAuthStatus() {
+  if (!supabaseClient) {
+    $("authStatusIndicator").textContent = "⚪ Supabase no disponible";
+    $("authStatusIndicator.style.background").background = "#332200";
+    return;
+  }
+  try {
+    const { data: { session }, error } = await supabaseClient.auth.getSession();
+    if (error) throw error;
+    currentUser = session?.user || null;
+    updateAuthUI();
+  } catch (err) {
+    console.warn("Error consultando sesión:", err);
+    currentUser = null;
+    updateAuthUI();
+  }
+}
+
+function updateAuthUI() {
+  const indicator = $("authStatusIndicator");
+  if (currentUser) {
+    indicator.textContent = `🟢 Conectado: ${currentUser.email}`;
+    indicator.style.background = "#093822";
+    $("authModalBtn").textContent = "Cuenta";
+    $("authUserInfo").textContent = "Sesión activa en Supabase:";
+    $("loggedUserEmail").textContent = currentUser.email;
+    $("authFormContainer").classList.add("hidden");
+    $("authLoggedContainer").classList.remove("hidden");
+  } else {
+    indicator.textContent = "🔴 Sin autenticar";
+    indicator.style.background = "#380c0c";
+    $("authModalBtn").textContent = "Acceder";
+    $("authUserInfo").textContent = "Inicia sesión con correo y contraseña para sincronizar tus proyectos en la nube.";
+    $("authFormContainer").classList.remove("hidden");
+    $("authLoggedContainer").classList.add("hidden");
+  }
+}
+
+$("authModalBtn").addEventListener("click", () => $("authModal").classList.remove("hidden"));
+$("closeAuthModal").addEventListener("click", () => $("authModal").classList.add("hidden"));
+
+$("loginBtn").addEventListener("click", async () => {
+  if (!supabaseClient) { notify("Supabase no está configurado."); return; }
+  const email = $("authEmail").value.trim();
+  const password = $("authPassword").value;
+  if (!email || !password) { notify("Introduce correo y contraseña."); return; }
+  try {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    currentUser = data.user;
+    updateAuthUI();
+    notify("¡Inicio de sesión exitoso!");
+    $("authModal").classList.add("hidden");
+    loadFromSupabase();
+  } catch (err) {
+    notify("Error al iniciar sesión: " + err.message);
+  }
+});
+
+$("registerBtn").addEventListener("click", async () => {
+  if (!supabaseClient) { notify("Supabase no está configurado."); return; }
+  const email = $("authEmail").value.trim();
+  const password = $("authPassword").value;
+  if (!email || !password) { notify("Introduce correo y contraseña para registrarte."); return; }
+  try {
+    const { data, error } = await supabaseClient.auth.signUp({ email, password });
+    if (error) throw error;
+    currentUser = data.user;
+    updateAuthUI();
+    notify("¡Registro exitoso! Revisa tu correo si requiere confirmación.");
+    $("authModal").classList.add("hidden");
+  } catch (err) {
+    notify("Error en el registro: " + err.message);
+  }
+});
+
+$("logoutBtn").addEventListener("click", async () => {
+  if (!supabaseClient) return;
+  await supabaseClient.auth.signOut();
+  currentUser = null;
+  updateAuthUI();
+  notify("Sesión cerrada.");
+});
+
+// Sincronización segura con confirmación para evitar sobrescrituras accidentales
+async function syncWithSupabase() {
+  if (!supabaseClient) { notify("Supabase no está disponible."); return; }
+  if (!currentUser) { notify("Debes iniciar sesión para sincronizar con Supabase."); $("authModal").classList.remove("hidden"); return; }
+  
+  if (!confirm("Se sincronizarán tus proyectos locales con la base de datos de Supabase. ¿Deseas continuar?")) return;
+
+  try {
+    notify("Sincronizando con Supabase...");
+    // Ejemplo de lectura / escritura protegida por RLS
+    for (const p of projects) {
+      const { error } = await supabaseClient.from("projects").upsert({
+        id: p.id,
+        user_id: currentUser.id,
+        name: p.name,
+        category: p.category,
+        icon: p.icon,
+        description: p.description,
+        url: p.url,
+        status: p.status,
+        updated: p.updated
+      });
+      if (error) console.warn("Upsert project error:", error.message);
+    }
+    notify("¡Sincronización completada con éxito!");
+  } catch (err) {
+    notify("Error de sincronización: " + err.message);
+  }
+}
+
+async function loadFromSupabase() {
+  if (!supabaseClient || !currentUser) return;
+  try {
+    const { data, error } = await supabaseClient.from("projects").select("*").eq("user_id", currentUser.id);
+    if (error) throw error;
+    if (data && data.length > 0) {
+      projects = data.map(p => ({
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        icon: p.icon,
+        description: p.description,
+        url: p.url,
+        status: p.status,
+        updated: p.updated || Date.now()
+      }));
+      persist();
+      notify("Proyectos cargados desde Supabase.");
+    }
+  } catch (err) {
+    console.warn("No se pudieron cargar proyectos remotos:", err.message);
+  }
+}
+
+$("syncSupabaseBtn").addEventListener("click", syncWithSupabase);
+$("syncSupabasePanelBtn").addEventListener("click", syncWithSupabase);
+
+// Inicializar verificación de auth
+if (supabaseClient) {
+  checkAuthStatus();
+}
+
+function instructionCount(){
+ const list=safeRead(INSTRUCTION_KEY,[]);
+ return Array.isArray(list)?list.length:0;
+}
+function renderStats(){
+ $("statProjects").textContent=projects.length;
+ $("statMilestones").textContent=milestones.length;
+ $("statInstructions").textContent=instructionCount();
+}
+function categories(){
+ return ["Todas",...new Set(projects.map(p=>p.category||"Otro"))];
+}
+function renderFilters(){
+ $("filters").innerHTML=categories().map(c=>
+ `<button class="filter ${c===activeCategory?"active":""}" data-category="${esc(c)}">${esc(c)}</button>`
+ ).join("");
+}
+function filteredProjects(){
+ const q=$("searchInput").value.trim().toLocaleLowerCase("es");
+ let list=projects.filter(p=>(activeCategory==="Todas"||p.category===activeCategory)&&
+ [p.name,p.category,p.description,p.status].some(v=>String(v||"").toLocaleLowerCase("es").includes(q)));
+ const sort=$("sortSelect").value;
+ if(sort==="category")list.sort((a,b)=>(a.category||"").localeCompare(b.category||""));
+ else if(sort==="newest")list.sort((a,b)=>(b.updated||0)-(a.updated||0));
+ else list.sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+ return list;
+}
+function renderProjects(){
+ const list=filteredProjects();
+ $("projectGrid").innerHTML=list.map(p=>{
+ const link=validLink(p.url);
+ const linkButton=link?`<a class="btn primary" href="${esc(link)}" ${/^https?:/.test(link)?'target="_blank" rel="noopener noreferrer"':""}>Abrir ↗</a>`:`<button class="btn" disabled title="Todavía no tiene un enlace configurado">Sin enlace</button>`;
+ return `<article class="card project-card">
+  <div class="card-top"><div class="project-icon">${esc(p.icon||"✦")}</div><span class="tag">${esc(p.status||"En desarrollo")}</span></div>
+  <h3>${esc(p.name)}</h3><p>${esc(p.description||"Sin descripción registrada.")}</p>
+  <div class="project-meta"><span>${esc(p.category||"Otro")}</span><span>${p.url?"Enlace configurado":"Enlace pendiente"}</span></div>
+  <div class="card-actions">${linkButton}<button class="btn" data-edit="${esc(p.id)}">Editar</button><button class="btn danger" data-delete="${esc(p.id)}">Eliminar</button></div>
+ </article>`;
+ }).join("");
+ $("noProjects").classList.toggle("hidden",list.length>0);
+ renderAdminTable();renderMilestoneProjectOptions();renderStats();
+}
+function renderAdminTable(){
+ $("adminTable").innerHTML=projects.map(p=>`<tr>
+ <td>${esc(p.name)}</td><td>${esc(p.category)} · ${esc(p.status)}</td>
+ <td><button class="btn" data-edit="${esc(p.id)}">Editar</button> <button class="btn danger" data-delete="${esc(p.id)}">Eliminar</button></td></tr>`).join("")||
+ `<tr><td colspan="3">No hay proyectos.</td></tr>`;
+}
+function renderMilestoneProjectOptions(){
+ const previous=$("mProject").value;
+ $("mProject").innerHTML='<option value="">General</option>'+projects.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
+ if(projects.some(p=>p.id===previous))$("mProject").value=previous;
+}
+function renderTimeline(){
+ const sorted=milestones.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+ $("timeline").innerHTML=sorted.map(m=>{
+ const project=projects.find(p=>p.id===m.projectId);
+ return `<div class="timeline-item"><time>${esc(m.date||"Sin fecha")}</time>
+ <h4>${esc(m.title)}</h4><p>${esc(m.description||"Sin descripción.")}</p>
+ <p style="margin-top:5px;color:#69d9ed">${esc(project?project.name:"General")}</p>
+ <div class="card-actions"><button class="btn danger" data-delete-milestone="${esc(m.id)}">Eliminar hito</button></div></div>`;
+ }).join("")||'<div class="empty">Todavía no hay hitos registrados.</div>';
+}
+function render(){
+ renderFilters();renderProjects();renderTimeline();renderStats();
+}
+function resetProjectForm(){
+ $("projectForm").reset();$("projectId").value="";$("pIcon").value="🚀";editingId=null;
+}
+function editProject(id){
+ const p=projects.find(x=>x.id===id);if(!p)return;
+ editingId=id;$("projectId").value=p.id;$("pName").value=p.name||"";
+ $("pCategory").value=p.category||"Otro";$("pIcon").value=p.icon||"🚀";
+ $("pDescription").value=p.description||"";$("pUrl").value=p.url||"";
+ $("pStatus").value=p.status||"En desarrollo";
+ $("administracion").scrollIntoView({behavior:"smooth"});$("pName").focus();
+}
+function deleteProject(id){
+ const p=projects.find(x=>x.id===id);if(!p)return;
+ if(!confirm(`¿Eliminar el proyecto "${p.name}"? Esta acción no se puede deshacer.`))return;
+ projects=projects.filter(x=>x.id!==id);
+ milestones=milestones.map(m=>m.projectId===id?{...m,projectId:""}:m);
+ persist();notify("Proyecto eliminado.");
+}
+$("projectForm").addEventListener("submit",e=>{
+ e.preventDefault();
+ const name=$("pName").value.trim();if(!name){notify("Escribe el nombre del proyecto.");return;}
+ const rawUrl=$("pUrl").value.trim(),url=validLink(rawUrl);
+ if(rawUrl&&!url){notify("Enlace no válido. Usa una URL http(s), un archivo .html o un ancla #seccion.");return;}
+ const data={name,category:$("pCategory").value,icon:$("pIcon").value.trim()||"✦",
+ description:$("pDescription").value.trim(),url,status:$("pStatus").value,updated:Date.now()};
+ if(editingId){
+  projects=projects.map(p=>p.id===editingId?{...p,...data}:p);notify("Proyecto actualizado.");
+ }else{
+  projects.unshift({id:uid("p"),...data});notify("Proyecto creado.");
+ }
+ persist();resetProjectForm();
+});
+$("resetProjectForm").addEventListener("click",resetProjectForm);
+$("newProjectBtn").addEventListener("click",()=>{resetProjectForm();$("administracion").scrollIntoView({behavior:"smooth"});$("pName").focus();});
+$("filters").addEventListener("click",e=>{
+ const b=e.target.closest("[data-category]");if(!b)return;
+ activeCategory=b.dataset.category;renderFilters();renderProjects();
+});
+$("projectGrid").addEventListener("click",e=>handleProjectAction(e));
+$("adminTable").addEventListener("click",e=>handleProjectAction(e));
+function handleProjectAction(e){
+ const edit=e.target.closest("[data-edit]"),del=e.target.closest("[data-delete]");
+ if(edit)editProject(edit.dataset.edit);
+ if(del)deleteProject(del.dataset.delete);
+}
+$("searchInput").addEventListener("input",renderProjects);
+$("sortSelect").addEventListener("change",renderProjects);
+$("clearSearchBtn").addEventListener("click",()=>{$("searchInput").value="";activeCategory="Todas";render();});
+$("milestoneForm").addEventListener("submit",e=>{
+ e.preventDefault();const title=$("mTitle").value.trim();
+ if(!title){notify("Escribe el título del hito.");return;}
+ milestones.push({id:uid("m"),title,date:$("mDate").value||localDate(),
+ projectId:$("mProject").value,description:$("mDescription").value.trim()});
+ safeWrite(MILESTONE_KEY,milestones);render();$("milestoneForm").reset();$("mDate").value=localDate();
+ notify("Hito guardado en la línea de tiempo.");
+});
+$("resetMilestoneForm").addEventListener("click",()=>{$("milestoneForm").reset();$("mDate").value=localDate();});
+$("newMilestoneBtn").addEventListener("click",()=>{$("mTitle").focus();$("linea-tiempo").scrollIntoView({behavior:"smooth"});});
+$("timeline").addEventListener("click",e=>{
+ const b=e.target.closest("[data-delete-milestone]");if(!b)return;
+ if(!confirm("¿Eliminar este hito de la línea de tiempo?"))return;
+ milestones=milestones.filter(m=>m.id!==b.dataset.deleteMilestone);
+ safeWrite(MILESTONE_KEY,milestones);render();notify("Hito eliminado.");
+});
+
+function downloadFile(filename,content,type){
+ const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+$("exportJson").addEventListener("click",()=>{
+ const data={schemaVersion:1,exportedAt:new Date().toISOString(),projects,milestones,
+ instructions:safeRead(INSTRUCTION_KEY,[])};
+ downloadFile("spaservis-respaldo-"+localDate()+".json",JSON.stringify(data,null,2),"application/json");
+ notify("Respaldo JSON preparado.");
+});
+$("exportCsv").addEventListener("click",()=>{
+ const headers=["id","name","category","icon","description","url","status","updated"];
+ const quote=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+ const csv=[headers.join(","),...projects.map(p=>headers.map(h=>quote(p[h])).join(","))].join("\r\n");
+ downloadFile("spaservis-proyectos-"+localDate()+".csv","\uFEFF"+csv,"text/csv;charset=utf-8");
+});
+$("importBtn").addEventListener("click",()=>$("importFile").click());
+$("importFile").addEventListener("change",async e=>{
+ const file=e.target.files[0];if(!file)return;
+ try{
+  if(file.size>5*1024*1024)throw new Error("El archivo supera el límite de 5 MB.");
+  const data=JSON.parse(await file.text());
+  if(!data||!Array.isArray(data.projects)||!Array.isArray(data.milestones))throw new Error("El JSON no contiene las listas esperadas.");
+  if(!confirm(`Se importarán ${data.projects.length} proyectos y ${data.milestones.length} hitos. ¿Reemplazar los datos actuales?`))return;
+  const importedProjects=data.projects.filter(p=>p&&typeof p.name==="string"&&p.name.trim()).map(p=>({
+   id:String(p.id||uid("p")).slice(0,100),name:String(p.name).slice(0,100),
+   category:String(p.category||"Otro").slice(0,50),icon:String(p.icon||"✦").slice(0,8),
+   description:String(p.description||"").slice(0,500),url:validLink(p.url),
+   status:String(p.status||"En desarrollo").slice(0,50),updated:Number(p.updated)||Date.now()
+  }));
+  const ids=new Set(importedProjects.map(p=>p.id));
+  const importedMilestones=data.milestones.filter(m=>m&&typeof m.title==="string"&&m.title.trim()).map(m=>({
+   id:String(m.id||uid("m")).slice(0,100),title:String(m.title).slice(0,120),
+   date:/^\d{4}-\d{2}-\d{2}$/.test(m.date||"")?m.date:localDate(),
+   projectId:ids.has(m.projectId)?m.projectId:"",description:String(m.description||"").slice(0,500)
+  }));
+  projects=importedProjects;milestones=importedMilestones;persist();
+  notify("Importación completada. Revisa los enlaces antes de usarlos.");
+ }catch(err){notify("No se pudo importar: "+err.message);}
+ finally{$("importFile").value="";}
+});
+$("resetData").addEventListener("click",()=>{
+ if(!confirm("¿Restaurar los proyectos e hitos iniciales? Los datos actuales serán reemplazados."))return;
+ projects=initialProjects.map(p=>({...p,updated:Date.now()}));milestones=initialMilestones.map(m=>({...m}));
+ persist();resetProjectForm();notify("Datos iniciales restaurados.");
+});
+$("printBtn").addEventListener("click",()=>window.print());
+
+function makeQr(n){
+ const url=$("qrUrl"+n).value.trim();
+ if(!url){notify("Introduce una dirección para generar el QR.");return;}
+ if(!/^https?:\/\/[^\s]+$/i.test(url)){notify("Para compartir, introduce una URL pública que empiece por http:// o https://.");return;}
+ if(typeof QRCode==="undefined"){notify("No se pudo cargar el generador QR. Comprueba la conexión a internet.");return;}
+ const target=$("qrOutput"+n);target.replaceChildren();
+ new QRCode(target,{text:url,width:180,height:180,colorDark:"#061426",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.H});
+ target.dataset.url=url;
+ target.dataset.label=$("qrLabel"+n).value.trim()||"spaservis-qr-"+n;
+ notify("Código QR generado.");
+}
+function downloadQr(n){
+ const target=$("qrOutput"+n);const img=target.querySelector("img");
+ const canvas=target.querySelector("canvas");
+ const src=img?.src||(canvas?canvas.toDataURL("image/png"):"");
+ if(!src){notify("Primero genera el código QR.");return;}
+ const a=document.createElement("a");a.href=src;
+ a.download=(target.dataset.label||"spaservis-qr-"+n).replace(/[^a-z0-9_-]/gi,"-")+".png";
+ document.body.appendChild(a);a.click();a.remove();
+}
+[1,2].forEach(n=>{
+ $("makeQr"+n).addEventListener("click",()=>makeQr(n));
+ $("downloadQr"+n).addEventListener("click",()=>downloadQr(n));
+});
+$("qrUrl1").value=location.protocol==="http:"||location.protocol==="https:"?location.href:"";
+$("qrUrl2").value="https://spaservis.github.io/Cita/#reservar";
+
+$("themeBtn").addEventListener("click",()=>{
+ const light=!document.body.classList.contains("light");
+ document.body.classList.toggle("light",light);
+ try{localStorage.setItem(THEME_KEY,light?"light":"dark");}catch{}
+ $("themeBtn").textContent=light?"☾":"☼";
+});
+try{
+ const savedTheme=localStorage.getItem(THEME_KEY);
+ if(savedTheme==="light"){document.body.classList.add("light");$("themeBtn").textContent="☾";}
+}catch{}
+$("speakBtn").addEventListener("click",()=>{
+ if(!("speechSynthesis" in window)){notify("La lectura en voz alta no está disponible en este navegador.");return;}
+ if(speechSynthesis.speaking){speechSynthesis.cancel();notify("Lectura detenida.");return;}
+ const text=document.querySelector("main").innerText.slice(0,12000);
+ const utterance=new SpeechSynthesisUtterance(text);utterance.lang="es-CO";utterance.rate=1;
+ speechSynthesis.speak(utterance);
+});
+$("voiceSearchBtn").addEventListener("click",()=>{
+ const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!Recognition){notify("La búsqueda por voz requiere un navegador compatible, como Chrome.");return;}
+ const rec=new Recognition();rec.lang="es-CO";rec.interimResults=false;
+ rec.onresult=e=>{$("searchInput").value=e.results[0][0].transcript;activeCategory="Todas";render();$("proyectos").scrollIntoView({behavior:"smooth"});};
+ rec.onerror=()=>notify("No se pudo completar la búsqueda por voz.");
+ rec.start();notify("Escuchando… di el nombre de un proyecto.");
+});
+
+window.addEventListener("message",event=>{
+ if(event.source!==$("improvementFrame").contentWindow)return;
+ const data=event.data;
+ if(!data||typeof data!=="object"||typeof data.type!=="string")return;
+ if(data.type==="INSTRUCTIONS_UPDATED"){renderStats();}
+ if(data.type==="CREATE_MILESTONE"&&typeof data.title==="string"){
+  const title=data.title.trim().slice(0,120);if(!title)return;
+  milestones.push({id:uid("m"),title,date:localDate(),projectId:"",description:String(data.description||"").slice(0,500)});
+  safeWrite(MILESTONE_KEY,milestones);render();notify("La instrucción se añadió a la línea de tiempo.");
+ }
+ if(data.type==="EXPORT_INSTRUCTIONS"){
+  const list=safeRead(INSTRUCTION_KEY,[]);
+  downloadFile("spaservis-instrucciones-"+localDate()+".json",JSON.stringify(list,null,2),"application/json");
+ }
+});
+window.addEventListener("storage",e=>{
+ if(e.key===INSTRUCTION_KEY)renderStats();
+});
+
+function startClock(){
+ const update=()=>{$("liveClock").textContent=new Date().toLocaleTimeString("es-CO",{hour12:false});};
+ update();setInterval(update,1000);
+}
+$("footerYear").textContent=new Date().getFullYear();
+$("mDate").value=localDate();
+render();startClock();
+
+function init3D(){
+ const canvas=$("scene3d");
+ if(!window.THREE){drawFallbackScene(canvas);return;}
+ try{
+  const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.setSize(canvas.clientWidth||500,canvas.clientHeight||410,false);
+  renderer.setClearColor(0x000000,0);
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(42,(canvas.clientWidth||500)/(canvas.clientHeight||410),.1,100);
+  camera.position.set(0,0,8);
+  scene.add(new THREE.AmbientLight(0x8adfff,1.8));
+  const light=new THREE.PointLight(0x29dfff,45);light.position.set(3,3,5);scene.add(light);
+  const goldLight=new THREE.PointLight(0xf5c96a,22);goldLight.position.set(-4,-2,3);scene.add(goldLight);
+  const group=new THREE.Group();scene.add(group);
+  const core=new THREE.Mesh(new THREE.IcosahedronGeometry(1.22,2),new THREE.MeshStandardMaterial({
+   color:0x0d6fa6,metalness:.8,roughness:.22,wireframe:true
+  }));group.add(core);
+  const inner=new THREE.Mesh(new THREE.OctahedronGeometry(.85,1),new THREE.MeshStandardMaterial({
+   color:0x36e8ff,metalness:.45,roughness:.18,transparent:true,opacity:.72
+  }));group.add(inner);
+  const torus1=new THREE.Mesh(new THREE.TorusGeometry(1.85,.012,8,140),new THREE.MeshBasicMaterial({color:0x40e8ff}));
+  torus1.rotation.x=1.1;torus1.rotation.y=.3;group.add(torus1);
+  const torus2=new THREE.Mesh(new THREE.TorusGeometry(2.2,.009,8,140),new THREE.MeshBasicMaterial({color:0xf5c96a}));
+  torus2.rotation.x=.6;torus2.rotation.y=1.2;group.add(torus2);
+  const nodes=new THREE.Group();
+  for(let i=0;i<14;i++){
+   const a=i*Math.PI*2/14;
+   const mesh=new THREE.Mesh(new THREE.SphereGeometry(.045,12,12),new THREE.MeshBasicMaterial({color:i%3===0?0xf5c96a:0x40e8ff}));
+   mesh.position.set(Math.cos(a)*2.35,Math.sin(a)*1.65,Math.sin(a*2)*.5);nodes.add(mesh);
+  }
+  group.add(nodes);
+  const starsGeometry=new THREE.BufferGeometry(),positions=[];
+  for(let i=0;i<240;i++)positions.push((Math.random()-.5)*12,(Math.random()-.5)*8,(Math.random()-.5)*5-2);
+  starsGeometry.setAttribute("position",new THREE.Float32BufferAttribute(positions,3));
+  const stars=new THREE.Points(starsGeometry,new THREE.PointsMaterial({color:0x6bdcff,size:.018,transparent:true,opacity:.7}));
+  scene.add(stars);
+  let pointerX=0,pointerY=0;
+  canvas.addEventListener("pointermove",e=>{
+   const r=canvas.getBoundingClientRect();pointerX=((e.clientX-r.left)/r.width-.5)*.5;
+   pointerY=((e.clientY-r.top)/r.height-.5)*.4;
+  });
+  const resize=()=>{
+   const w=Math.max(1,canvas.clientWidth),h=Math.max(1,canvas.clientHeight);
+   renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+  };
+  if("ResizeObserver" in window)new ResizeObserver(resize).observe(canvas);
+  else window.addEventListener("resize",resize);
+  const clock=new THREE.Clock();
+  function animate(){
+   requestAnimationFrame(animate);const t=clock.getElapsedTime();
+   group.rotation.y=t*.17+pointerX;group.rotation.x=Math.sin(t*.25)*.13+pointerY;
+   inner.rotation.x=-t*.24;inner.rotation.y=t*.31;torus1.rotation.z=t*.15;torus2.rotation.x=.6+Math.sin(t*.2)*.12;
+   nodes.rotation.y=-t*.1;stars.rotation.y=t*.008;
+   renderer.render(scene,camera);
+  }
+  resize();animate();
+ }catch(error){console.warn("Escena 3D no disponible:",error);drawFallbackScene(canvas);}
+}
+function drawFallbackScene(canvas){
+ const ctx=canvas.getContext("2d");if(!ctx)return;
+ function draw(){
+  const w=canvas.clientWidth||480,h=canvas.clientHeight||410;
+  if(canvas.width!==Math.round(w*(devicePixelRatio||1))||canvas.height!==Math.round(h*(devicePixelRatio||1))){
+   canvas.width=Math.round(w*(devicePixelRatio||1));canvas.height=Math.round(h*(devicePixelRatio||1));
+  }
+  ctx.setTransform(devicePixelRatio||1,0,0,devicePixelRatio||1,0,0);
+  ctx.clearRect(0,0,w,h);const x=w/2,y=h/2,r=Math.min(w,h)*.25;
+  ctx.strokeStyle="#40e8ff";ctx.lineWidth=1;
+  for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse(x,y,r+i*22,r*.45+i*11,Date.now()/5000+i,0,Math.PI*2);ctx.stroke();}
+  const g=ctx.createRadialGradient(x-r*.25,y-r*.3,2,x,y,r);
+  g.addColorStop(0,"#83f7ff");g.addColorStop(.4,"#117fb6");g.addColorStop(1,"#061426");
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r*.7,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle="#f5c96a";ctx.beginPath();ctx.arc(x,y,r*1.35,Date.now()/2000,Date.now()/2000+Math.PI*1.3);ctx.stroke();
+  requestAnimationFrame(draw);
+ }
+ draw();
+}
+init3D();
+
+const improvementDocument = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{color-scheme:dark;--bg:#061426;--panel:#0c2239;--line:#244d6b;--cyan:#40e8ff;--gold:#f5c96a;--text:#eaf5ff;--muted:#9fb8ce}
+*{box-sizing:border-box}body{margin:0;padding:18px;background:linear-gradient(140deg,#061426,#0b2036);color:var(--text);font:14px/1.5 Inter,Arial,sans-serif}
+h1,h2,h3{margin-top:0}h1{font-size:22px;color:var(--cyan)}h2{font-size:16px}p{color:var(--muted);font-size:12px}
+.panel{border:1px solid var(--line);background:#0b2038;border-radius:15px;padding:16px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{width:100%;padding:10px;border-radius:9px;border:1px solid #315977;background:#061426;color:#eaf5ff;font:inherit}
+label{display:block;font-size:11px;color:#aac4d9;margin-bottom:5px}.full{grid-column:1/-1}
+.btn{border:1px solid #32627f;border-radius:9px;padding:9px 12px;background:#102e4b;color:#eaf5ff;cursor:pointer;font-weight:bold;font-size:11px;margin:4px 4px 0 0}
+.btn.primary{background:#087ca1;border-color:#40e8ff}.btn.gold{background:#f5c96a;color:#14263a}
+.list{display:grid;gap:9px}.item{border:1px solid var(--line);border-radius:12px;padding:12px;background:#071a2d}
+.item h3{font-size:13px;margin:6px 0}.item p{white-space:pre-wrap;margin:5px 0}.meta{font-size:10px;color:var(--gold)}
+.badge{font-size:9px;color:var(--cyan);border:1px solid #40e8ff44;border-radius:20px;padding:3px 7px}
+.actions{display:flex;gap:5px;flex-wrap:wrap}.empty{font-size:12px;color:var(--muted);padding:14px;border:1px dashed var(--line);border-radius:10px}
+@media(max-width:560px){.grid{grid-template-columns:1fr}.full{grid-column:auto}body{padding:10px}}
+</style></head><body>
+<h1>✧ Centro de mejoras Spaservis</h1>
+<p>Documento HTML secundario integrado dentro del index principal. Las instrucciones se guardan por separado y pueden exportarse.</p>
+<div class="panel"><h2>Registrar una instrucción</h2>
+<form id="form"><div class="grid">
+<div class="full"><label for="title">Título de la mejora *</label><input id="title" class="field" maxlength="120" required placeholder="Ej. Integrar un panel de indicadores"></div>
+<div><label for="area">Área</label><select id="area" class="field"><option>Diseño y experiencia</option><option>Funcionalidad</option><option>Seguridad</option><option>Datos y reportes</option><option>Salud</option><option>SG-SST</option><option>Logística</option><option>Accesibilidad</option><option>Otra</option></select></div>
+<div><label for="priority">Prioridad</label><select id="priority" class="field"><option>Alta</option><option selected>Media</option><option>Baja</option></select></div>
+<div><label for="status">Estado</label><select id="status" class="field"><option>Pendiente</option><option>En revisión</option><option>Aplicada</option><option>Descartada</option></select></div>
+<div><label for="date">Fecha</label><input id="date" type="date" class="field"></div>
+<div class="full"><label for="detail">Instrucción detallada *</label><textarea id="detail" class="field" rows="4" maxlength="5000" required placeholder="Describe qué debe cambiar, dónde, qué debe conservarse y cómo validar el resultado."></textarea></div>
+<div class="full"><label for="acceptance">Criterios de aceptación</label><textarea id="acceptance" class="field" rows="2" maxlength="1500" placeholder="Ej. Debe funcionar en móvil, conservar los datos y mostrar confirmación."></textarea></div>
+</div><button class="btn primary" type="submit">Guardar instrucción</button><button class="btn" type="button" id="clear">Limpiar</button></form></div>
+<div class="panel"><h2>Buscar y organizar</h2><input id="search" class="field" placeholder="Buscar en instrucciones…">
+<div class="actions"><button class="btn" id="export">Exportar instrucciones JSON</button><button class="btn" id="timeline">Enviar selección a la línea de tiempo</button><button class="btn" id="copy">Copiar selección</button></div>
+<p id="summary">Cargando registro…</p></div>
+<div id="list" class="list"></div>
+<div class="panel"><h2>Protocolo recomendado de mejora</h2>
+<p><strong>1.</strong> Describe el problema concreto. <strong>2.</strong> Indica qué debe conservarse. <strong>3.</strong> Define el comportamiento esperado. <strong>4.</strong> Aplica el cambio al código fuente. <strong>5.</strong> Prueba escritorio y móvil. <strong>6.</strong> Exporta un respaldo antes de publicar.</p>
+</div>
+<script>
+(function(){
+"use strict";
+const KEY="spaservis_instructions_v1";
+const $=id=>document.getElementById(id);
+const dateNow=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let items=[];
+try{const v=JSON.parse(localStorage.getItem(KEY)||"[]");items=Array.isArray(v)?v:[]}catch{}
+let selectedId=null;
+$("date").value=dateNow();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(items));}catch(e){alert("No se pudo guardar.");}render();parent.postMessage({type:"INSTRUCTIONS_UPDATED"},"*");}
+function clearForm(){$("form").reset();$("date").value=dateNow();selectedId=null;}
+function render(){
+ const q=$("search").value.trim().toLocaleLowerCase("es");
+ const filtered=items.filter(i=>[i.title,i.detail,i.area,i.priority,i.status,i.acceptance].some(v=>String(v||"").toLocaleLowerCase("es").includes(q)));
+ $("summary").textContent=items.length+" instrucción(es) guardada(s) · "+items.filter(i=>i.status==="Pendiente").length+" pendiente(s)";
+ $("list").innerHTML=filtered.map(i=>'<article class="item"><div class="meta">'+esc(i.date)+' · '+esc(i.area)+' · '+esc(i.priority)+'</div><h3>'+esc(i.title)+'</h3><p>'+esc(i.detail)+'</p>'+(i.acceptance?'<p><strong>Criterios:</strong> '+esc(i.acceptance)+'</p>':'')+'<span class="badge">'+esc(i.status)+'</span><div class="actions"><button class="btn" data-select="'+esc(i.id)+'">Seleccionar</button><button class="btn" data-edit="'+esc(i.id)+'">Editar</button><button class="btn" data-status="'+esc(i.id)+'">Cambiar estado</button><button class="btn" data-timeline="'+esc(i.id)+'">Enviar al timeline</button><button class="btn" data-delete="'+esc(i.id)+'">Eliminar</button></div></article>').join("")||'<div class="empty">No hay instrucciones que coincidan.</div>';
+}
+$("form").addEventListener("submit",e=>{
+ e.preventDefault();const title=$("title").value.trim(),detail=$("detail").value.trim();
+ if(!title||!detail){alert("Completa el título y la instrucción detallada.");return;}
+ const data={title,detail,area:$("area").value,priority:$("priority").value,status:$("status").value,date:$("date").value||dateNow(),acceptance:$("acceptance").value.trim(),updated:new Date().toISOString()};
+ if(selectedId){items=items.map(i=>i.id===selectedId?{...i,...data}:i);}else{items.unshift({id:"i_"+Date.now().toString(36),...data});}
+ save();clearForm();
+});
+$("clear").addEventListener("click",clearForm);
+$("search").addEventListener("input",render);
+$("list").addEventListener("click",e=>{
+ const b=e.target.closest("button");if(!b)return;const id=b.dataset.select||b.dataset.edit||b.dataset.status||b.dataset.timeline||b.dataset.delete;
+ const item=items.find(i=>i.id===id);if(!item)return;
+ if(b.dataset.select){selectedId=id;render();return;}
+ if(b.dataset.edit){selectedId=id;$("title").value=item.title;$("detail").value=item.detail;$("area").value=item.area;$("priority").value=item.priority;$("status").value=item.status;$("date").value=item.date;$("acceptance").value=item.acceptance||"";$("form").scrollIntoView({behavior:"smooth"});return;}
+ if(b.dataset.status){const states=["Pendiente","En revisión","Aplicada","Descartada"];item.status=states[(states.indexOf(item.status)+1)%states.length];item.updated=new Date().toISOString();save();return;}
+ if(b.dataset.timeline){parent.postMessage({type:"CREATE_MILESTONE",title:item.title,description:item.detail},"*");alert("Se envió el hito al portal principal.");return;}
+ if(b.dataset.delete&&confirm("¿Eliminar esta instrucción?")){items=items.filter(i=>i.id!==id);save();}
+});
+$("export").addEventListener("click",()=>parent.postMessage({type:"EXPORT_INSTRUCTIONS"},"*"));
+$("timeline").addEventListener("click",()=>{
+ const item=items.find(i=>i.id===selectedId);
+ if(!item){alert("Selecciona una instrucción primero.");return;}
+ parent.postMessage({type:"CREATE_MILESTONE",title:item.title,description:item.detail},"*");
+ alert("Se envió el hito al portal principal.");
+});
+$("copy").addEventListener("click",async()=>{
+ const item=items.find(i=>i.id===selectedId);
+ if(!item){alert("Selecciona una instrucción primero.");return;}
+ const text="MEJORA: "+item.title+"\\nÁREA: "+item.area+"\\nPRIORIDAD: "+item.priority+"\\nESTADO: "+item.status+"\\nINSTRUCCIÓN:\\n"+item.detail+"\\nCRITERIOS:\\n"+(item.acceptance||"No definidos");
+ try{await navigator.clipboard.writeText(text);alert("Instrucción copiada.");}catch{alert("No se pudo copiar.");}
+});
+render();
+})();
+<\/script></body></html>`;
+$("improvementFrame").srcdoc=improvementDocument;
+})();
+</script>
+</body>
+</html>
