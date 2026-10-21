@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#061426">
+<meta name="description" content="Spaservis Odonto: Plataforma de venta de servicios odontológicos conforme a la normativa de salud en Colombia (CUPS, RIPS, Hábeas Data).">
+<title>Spaservis | Venta y Gestión Odontológica Colombia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- Conector oficial de Supabase JS v2 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root {
+ --bg:#061426;--bg2:#0a2039;--panel:#0d253edb;--panel2:#102d4a;
+ --blue:#1677ff;--cyan:#40e8ff;--gold:#f5c96a;--text:#eaf5ff;
+ --muted:#a5bbd0;--line:#75c8ff30;--good:#56e6ac;--danger:#ff7789;
+ --radius:20px;--shadow:0 18px 55px #0005;--header:76px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:100px}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 Inter,Arial,sans-serif;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;z-index:-3;background:radial-gradient(ellipse at 15% 10%,#0c3b6b,transparent 45%),radial-gradient(ellipse at 90% 50%,#09284b,transparent 45%),linear-gradient(145deg,#040d19,#07192d 60%,#061426)}
+button,input,select,textarea{font:inherit}
+button,a{-webkit-tap-highlight-color:transparent}
+a{color:var(--cyan);text-decoration:none}
+a:hover{color:white}
+button{cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+button:disabled{opacity:.45;cursor:not-allowed}
+#starfield{position:fixed;inset:0;width:100%;height:100%;z-index:-2;pointer-events:none}
+.grid-floor{position:fixed;left:-20%;right:-20%;bottom:-25%;height:65%;z-index:-1;pointer-events:none;background-image:linear-gradient(#35cfff16 1px,transparent 1px),linear-gradient(90deg,#35cfff16 1px,transparent 1px);background-size:44px 44px;transform:perspective(300px) rotateX(58deg);mask-image:linear-gradient(transparent,#000)}
+header{position:sticky;top:0;z-index:50;background:#061426eF;backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+.nav{max-width:1500px;margin:auto;padding:10px 20px;display:flex;align-items:center;gap:15px}
+.brand{display:flex;align-items:center;gap:11px;min-width:240px;color:var(--text)}
+.brand-mark{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,var(--blue),#06284b 70%);border:1px solid #65dfff77;box-shadow:0 0 24px #17bfff36;font-size:23px}
+.brand strong{font-family:Orbitron,sans-serif;letter-spacing:1px;font-size:14px}
+.brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:2px}
+.navlinks{display:flex;gap:4px;align-items:center;flex:1;flex-wrap:wrap}
+.navlinks a{font-size:11px;color:#d3e6f6;padding:8px;border-radius:9px;white-space:nowrap}
+.navlinks a:hover,.navlinks a.active{background:#1b4262;color:var(--cyan)}
+.nav-actions{display:flex;gap:6px;align-items:center}
+.menu-toggle{display:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:#102b46;color:var(--text);font-weight:700;font-size:12px;transition:transform .2s,border-color .2s,box-shadow .2s}
+.btn:hover{transform:translateY(-2px);border-color:var(--cyan);box-shadow:0 6px 22px #00cfff22}
+.btn.primary{background:linear-gradient(115deg,#1262db,#087d9e);border-color:#57dfff88}
+.btn.gold{background:linear-gradient(120deg,#dba744,#ffe6a2);color:#18202b;border-color:transparent}
+.btn.danger{border-color:#ff778955;color:#ff9cac}
+.btn.good{background:linear-gradient(115deg,#0d8a57,#12b874);border-color:#56e6ac77}
+.icon-btn{width:39px;height:39px;padding:0;font-size:16px}
+main{max-width:1500px;margin:auto;padding:22px}
+.hero{min-height:450px;display:grid;grid-template-columns:1.1fr .9fr;align-items:center;gap:24px;padding:25px 0 35px}
+.eyebrow{color:var(--cyan);font-size:10px;letter-spacing:3px;font-weight:800;text-transform:uppercase}
+.hero h1{font-family:Orbitron,sans-serif;font-size:clamp(30px,4.5vw,58px);line-height:1.12;letter-spacing:-1.5px;margin:15px 0}
+.hero h1 span{color:var(--cyan);text-shadow:0 0 28px #28cfff45}
+.hero p{max-width:680px;color:var(--muted);font-size:14px}
+.hero-actions,.pills,.toolbar,.filters,.form-actions,.card-actions{display:flex;gap:9px;flex-wrap:wrap}
+.hero-actions{margin-top:20px}
+.pills{margin-top:20px}
+.pill{font-size:10px;color:#c4d8e9;border:1px solid var(--line);background:#0b2037a8;padding:7px 10px;border-radius:30px}
+.scene-wrap{position:relative;min-height:380px;display:grid;place-items:center}
+#scene3d{width:100%;height:380px;display:block;touch-action:pan-y}
+.scene-hud{position:absolute;inset:auto 5% 8% 5%;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
+.hud-chip{background:#061426bd;border:1px solid #3cdfff55;backdrop-filter:blur(8px);border-radius:12px;padding:9px 12px;font-size:10px;color:#bcecff}
+.hud-chip strong{display:block;font-family:Orbitron,sans-serif;color:var(--cyan);font-size:12px}
+.section{padding:28px 0;scroll-margin-top:90px}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:18px;margin-bottom:18px}
+.section-head h2{font-family:Orbitron,sans-serif;font-size:clamp(20px,3vw,28px);margin:5px 0}
+.section-head p{margin:0;color:var(--muted);font-size:12px}
+.section-kicker{font-size:10px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;font-weight:800}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.stat,.card,.panel{background:linear-gradient(145deg,#102d49df,#091c30e8);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.stat{padding:18px;position:relative;overflow:hidden}
+.stat span{color:var(--muted);font-size:11px}
+.stat strong{display:block;font-family:Orbitron,sans-serif;font-size:25px;margin-top:6px;color:var(--cyan)}
+.stat small{color:var(--gold);font-size:10px}
+.toolbar{margin:15px 0}
+.field{width:100%;background:#06172a;color:var(--text);border:1px solid #326080;border-radius:11px;padding:10px 12px;min-width:0}
+.field::placeholder{color:#7795ae}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.panel{padding:21px;min-width:0}
+.panel h3{margin:0 0 8px;font-size:15px;color:var(--cyan);font-family:Orbitron,sans-serif}
+.panel>p{color:var(--muted);font-size:12px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-grid .full{grid-column:1/-1}
+label{display:block;color:#b4c9dc;font-size:11px;margin-bottom:4px}
+.form-actions{margin-top:12px}
+.table-wrap{overflow:auto}
+table{border-collapse:collapse;width:100%;font-size:11px;min-width:500px}
+th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line)}
+th{color:var(--cyan);font-size:10px;text-transform:uppercase;letter-spacing:1px}
+td{color:#c2d6e8}
+.empty{padding:24px;text-align:center;color:var(--muted);font-size:12px;border:1px dashed var(--line);border-radius:15px}
+.callout{padding:13px;border-radius:14px;border:1px solid #f5c96a44;background:#f5c96a0a;color:#d9e7f3;font-size:12px}
+.callout.norma{border-color:#40e8ff44;background:#40e8ff0a}
+
+/* Odontograma */
+.odontogram-wrap{background:#06172a;border:1px solid var(--line);border-radius:16px;padding:15px;margin:15px 0}
+.odontogram-quadrant{display:flex;justify-content:center;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.tooth-btn{width:36px;height:44px;border-radius:8px;background:#0d2d4a;border:1px solid #3d79a8;color:var(--text);font-size:10px;font-weight:bold;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:.2s}
+.tooth-btn:hover{border-color:var(--cyan);background:#16436e}
+.tooth-btn.selected{background:var(--blue);border-color:var(--cyan);box-shadow:0 0 10px #40e8ff77}
+.tooth-btn small{font-size:8px;color:var(--gold)}
+
+/* Modal Flotante de Gestión DB */
+.modal-overlay{position:fixed;inset:0;background:#030a14cc;backdrop-filter:blur(8px);z-index:100;display:flex;align-items:center;justify-content:center;padding:15px;opacity:0;pointer-events:none;transition:opacity .25s}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal-box{background:#0a2039;border:1px solid var(--cyan);border-radius:24px;width:100%;max-width:1100px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px #0008;overflow:hidden}
+.modal-header{padding:18px 24px;background:#061426;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.modal-header h2{margin:0;font-family:Orbitron,sans-serif;font-size:18px;color:var(--cyan)}
+.modal-body{padding:20px;overflow-y:auto;flex:1}
+.modal-tabs{display:flex;gap:8px;border-bottom:1px solid var(--line);padding:0 24px;background:#081b30}
+.tab-btn{padding:12px 18px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-weight:bold;font-size:12px;cursor:pointer}
+.tab-btn.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+
+footer{border-top:1px solid var(--line);padding:25px 20px;text-align:center;color:#8ba5bd;font-size:11px}
+.toast{position:fixed;right:18px;bottom:18px;z-index:200;max-width:min(380px,90vw);padding:13px 16px;border-radius:13px;background:#123957;border:1px solid var(--cyan);box-shadow:var(--shadow);font-size:12px;display:none}
+.toast.show{display:block;animation:pop .2s ease}
+@keyframes pop{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+.hidden{display:none!important}
+hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+body.light{--bg:#edf5fc;--bg2:#e1edf8;--text:#13283e;--muted:#526c84;--line:#b7d0e3;background:#edf5fc;color:var(--text)}
+body.light .stat,body.light .card,body.light .panel{background:#ffffffed}
+body.light .field{background:#f7fbff;color:#122a42}
+body.light .modal-box{background:#ffffff;color:#13283e}
+body.light .modal-header{background:#e1edf8}
+body.light .modal-tabs{background:#edf5fc}
+
+/* Botón flotante unificado DB */
+.floating-db-btn{position:fixed;bottom:25px;left:25px;z-index:90;padding:12px 20px;border-radius:50px;box-shadow:0 10px 30px #00cfff44}
+
+@media(max-width:1100px){
+ .nav{flex-wrap:wrap}.brand{flex:1}.menu-toggle{display:inline-flex}
+ .navlinks{display:none;order:5;flex-basis:100%;flex-direction:column;align-items:stretch;padding:10px 0}
+ .navlinks.open{display:flex}.navlinks a{padding:10px 12px}
+ .hero{grid-template-columns:1fr;padding-top:20px}.scene-wrap{min-height:300px}#scene3d{height:300px}
+ .two-col{grid-template-columns:1fr}
+}
+@media(max-width:650px){
+ main{padding:12px}.hero h1{font-size:32px}
+ .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}
+ .floating-db-btn{bottom:15px;left:15px;padding:10px 15px;font-size:11px}
+}
+</style>
+</head>
+<body>
+<canvas id="starfield" aria-hidden="true"></canvas>
+<div class="grid-floor" aria-hidden="true"></div>
+
+<header>
+<nav class="nav" aria-label="Navegación principal">
+<a class="brand" href="#inicio" aria-label="Spaservis Odonto, inicio">
+<span class="brand-mark">🦷</span>
+<span><strong>SPASERVIS ODONTO</strong><small>VENTA & GESTIÓN SALUD COLOMBIA</small></span>
+</a>
+<button class="btn icon-btn menu-toggle" id="menuBtn" aria-label="Abrir menú" aria-expanded="false">☰</button>
+<div class="navlinks" id="navlinks">
+<a href="#inicio">Inicio</a>
+<a href="#cotizador">Cotizador CUPS</a>
+<a href="#odontograma">Odontograma</a>
+<a href="#rips">Normativa & RIPS</a>
+<a href="#qr">QR Cotización</a>
+</div>
+<div class="nav-actions">
+<button class="btn icon-btn" id="themeBtn" title="Cambiar tema">☼</button>
+<button class="btn icon-btn" id="speakBtn" title="Leer página en voz alta">🔊</button>
+</div>
+</nav>
+</header>
+
+<!-- Botón Flotante Unificado para la Base de Datos -->
+<button class="btn primary floating-db-btn" id="openDbManagerBtn">
+ ⚡ Administrar Base de Datos Odontológica
+</button>
+
+<main>
+<section class="hero" id="inicio">
+<div>
+<div class="eyebrow">Normativa Colombia · Res. 3100/2019 · RIPS 2275/2023 · Hábeas Data</div>
+<h1>Gestión integral y venta de <span>servicios odontológicos.</span></h1>
+<p>Cotiza procedimientos conforme a la clasificación CUPS, gestiona la admisión del paciente con consentimiento informado de Hábeas Data y sincroniza ventas y registros RIPS directamente en la nube mediante Supabase.</p>
+<div class="hero-actions">
+<a class="btn primary" href="#cotizador">🛒 Iniciar Cotización / Venta</a>
+<button class="btn gold" id="sqlModalBtn">📜 Ver Script SQL Supabase</button>
+<button class="btn" id="voiceSearchBtn">🎙 Buscar por voz</button>
+</div>
+<div class="pills">
+<span class="pill">✦ Res. 2275 RIPS BSO</span>
+<span class="pill">✦ Ley 1581 Hábeas Data</span>
+<span class="pill">✦ Ley 2015 H.C.E</span>
+<span class="pill">✦ Supabase Live DB</span>
+</div>
+</div>
+<div class="scene-wrap">
+<canvas id="scene3d" aria-label="Escena 3D interactivas de salud odontológica"></canvas>
+<div class="scene-hud">
+<div class="hud-chip"><strong>SPASERVIS / DENTAL 3D</strong>Modelo Odontológico</div>
+<div class="hud-chip"><strong id="liveClock">--:--:--</strong>Hora Colombia</div>
+</div>
+</div>
+</section>
+
+<section class="section">
+<div class="stats">
+<div class="stat"><span>Pacientes registrados</span><strong id="statPatients">0</strong><small>Ley 1581 / Hábeas Data</small></div>
+<div class="stat"><span>Catálogo CUPS Activo</span><strong id="statCups">0</strong><small>Tarifario Odontología</small></div>
+<div class="stat"><span>Ventas / Cotizaciones</span><strong id="statSales">0</strong><small>Facturación DIAN Prep</small></div>
+<div class="stat"><span>Registros RIPS</span><strong id="statRips">0</strong><small>Res. 2275 de 2023</small></div>
+</div>
+</section>
+
+<!-- MÓDULO COTIZADOR Y VENTA -->
+<section class="section" id="cotizador">
+<div class="section-head">
+<div>
+<div class="section-kicker">01 / Venta & Cotización</div>
+<h2>Cotizador Odontológico Normativo</h2>
+<p>Selecciona el paciente, asocia procedimientos CUPS o piezas dentales y calcula el costo final.</p>
+</div>
+</div>
+
+<div class="two-col">
+<!-- Formulario de Selección / Registro de Paciente -->
+<div class="panel">
+<h3>1. Admisión del Paciente</h3>
+<p>Selecciona un paciente existente o registra uno rápido cumpliendo Ley 1581 de 2012.</p>
+<div style="margin-bottom:12px">
+<label for="selectPatient">Paciente Existente</label>
+<select class="field" id="selectPatient">
+<option value="">-- Seleccionar Paciente --</option>
+</select>
+</div>
+<hr>
+<div class="form-grid">
+<div><label for="pTypeDoc">Tipo Doc.</label>
+<select class="field" id="pTypeDoc"><option>CC</option><option>TI</option><option>CE</option><option>PA</option></select></div>
+<div><label for="pNumDoc">Número Documento *</label><input class="field" id="pNumDoc" placeholder="1000123456"></div>
+<div><label for="pFirstName">Primer Nombre *</label><input class="field" id="pFirstName" placeholder="Juan"></div>
+<div><label for="pLastName">Primer Apellido *</label><input class="field" id="pLastName" placeholder="Pérez"></div>
+<div><label for="pEps">EPS / Aseguradora</label><input class="field" id="pEps" placeholder="Sura / Coosalud / Particular"></div>
+<div><label for="pUserType">Tipo Usuario</label>
+<select class="field" id="pUserType"><option>Contributivo</option><option>Subsidiado</option><option>Particular</option></select></div>
+<div class="full"><label><input type="checkbox" id="pHabeasData" checked> Acepta Consentimiento Hábeas Data (Ley 1581 de 2012) y tratamiento de datos de salud.</label></div>
+</div>
+<button class="btn primary" id="btnQuickPatient" style="margin-top:10px;width:100%">Guardar / Seleccionar Paciente</button>
+</div>
+
+<!-- Selección de Servicios Odontológicos CUPS -->
+<div class="panel">
+<h3>2. Procedimientos & Servicios (CUPS)</h3>
+<p>Agrega procedimientos al carrito de cotización.</p>
+<div class="form-grid">
+<div class="full">
+<label for="selectCups">Buscar Procedimiento CUPS</label>
+<select class="field" id="selectCups"></select>
+</div>
+<div>
+<label for="inputQty">Cantidad</label>
+<input class="field" type="number" id="inputQty" value="1" min="1">
+</div>
+<div>
+<label for="inputToothNum">Pieza Dental (Opcional)</label>
+<input class="field" id="inputToothNum" placeholder="Ej. 11, 24, 46">
+</div>
+</div>
+<button class="btn good" id="btnAddService" style="margin-top:10px;width:100%">＋ Agregar a la Cotización</button>
+
+<hr>
+
+<h3>3. Odontograma Simplificado</h3>
+<p>Haz clic en una pieza dental para registrar el tratamiento en dicha superficie/diente:</p>
+<div class="odontogram-wrap">
+ <div class="odontogram-quadrant" id="quadrantUp"></div>
+ <div class="odontogram-quadrant" id="quadrantDown"></div>
+</div>
+</div>
+</div>
+
+<!-- Resumen de Venta / Cotización -->
+<div class="panel" style="margin-top:15px">
+<h3>Resumen de la Cotización / Orden de Servicio</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>CUPS</th>
+<th>Procedimiento</th>
+<th>Diente</th>
+<th>Cant.</th>
+<th>Precio Unit.</th>
+<th>Subtotal</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="cartTable">
+<tr><td colspan="7" class="empty">No hay procedimientos agregados a la cotización.</td></tr>
+</tbody>
+</table>
+</div>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:15px;flex-wrap:wrap;gap:15px">
+<div>
+ <span style="font-size:12px;color:var(--muted)">Tipo de Copago/Descuento Aplicado: <strong id="copayLabel">Particular (100%)</strong></span>
+</div>
+<div style="text-align:right">
+ <span style="font-size:14px">TOTAL ESTIMADO: </span>
+ <strong id="cartTotal" style="font-size:24px;color:var(--cyan);font-family:Orbitron,sans-serif">$0 COP</strong>
+</div>
+</div>
+
+<div class="form-actions" style="margin-top:15px">
+<button class="btn primary" id="btnFinalizeSale">💾 Registrar Venta & Generar RIPS</button>
+<button class="btn" id="btnClearCart">Limpiar Cotización</button>
+</div>
+</div>
+</section>
+
+<!-- NORMATIVA Y RIPS DE ODONTOLOGÍA -->
+<section class="section" id="rips">
+<div class="section-head">
+<div>
+<div class="section-kicker">02 / Cumplimiento Legal</div>
+<h2>Normativa Sanitaria & Estándar RIPS</h2>
+<p>Soporte legal integrado para la venta de servicios de salud en Colombia.</p>
+</div>
+</div>
+<div class="two-col">
+<div class="panel callout norma">
+ <h3>Resolución 2275 de 2023 (RIPS en Salud)</h3>
+ <p>Generación automática de datos de la consulta y procedimiento odontológico según la causa externa, finalidad de la consulta y diagnóstico principal (CIE-10).</p>
+ <hr>
+ <h3>Resolución 3100 de 2019 (Habilitación)</h3>
+ <p>Cumplimiento de estándares del talento humano, infraestructura y dotación para servicios de consulta externa de odontología general y especializada.</p>
+</div>
+<div class="panel callout norma">
+ <h3>Ley 1581 de 2012 (Hábeas Data)</h3>
+ <p>Protección estricta de datos personales y sensibles de salud. Los registros incluyen validación explícita de consentimiento informado.</p>
+ <hr>
+ <h3>Ley 2015 de 2020 (H.C.E Interoperable)</h3>
+ <p>Formato normalizado que permite la interoperabilidad de la Historia Clínica Electrónica y facturación electrónica para la DIAN.</p>
+</div>
+</div>
+</section>
+
+<!-- SECCIÓN QR PARA COMPARTIR COTIZACIÓN -->
+<section class="section" id="qr">
+<div class="section-head">
+<div>
+<div class="section-kicker">03 / Acceso Rápido</div>
+<h2>Código QR de la Cotización</h2>
+<p>Entrega al paciente un QR para la consulta directa de su presupuesto.</p>
+</div>
+</div>
+<div class="panel" style="max-width:500px;margin:auto;text-align:center">
+<div class="qr-canvas" id="qrOutput" style="margin:15px auto;width:200px;height:200px;background:white;padding:10px;border-radius:12px;display:grid;place-items:center">
+ <span style="color:#444">Registra una cotización para generar el QR</span>
+</div>
+<button class="btn primary" id="btnDownloadQr">Descargar Código QR (PNG)</button>
+</div>
+</section>
+</main>
+
+<!-- MODAL FLOTANTE UNIFICADO DE ADMINISTRACIÓN DE BASE DE DATOS -->
+<div class="modal-overlay" id="dbModal">
+<div class="modal-box">
+<div class="modal-header">
+ <h2>⚡ Administrador de Base de Datos Odontológica (Supabase / Local)</h2>
+ <button class="btn icon-btn danger" id="closeDbModalBtn">✕</button>
+</div>
+<div class="modal-tabs">
+ <button class="tab-btn active" data-tab="tabPatients">Pacientes</button>
+ <button class="tab-btn" data-tab="tabCups">Catálogo CUPS</button>
+ <button class="tab-btn" data-tab="tabSales">Historial de Ventas</button>
+ <button class="tab-btn" data-tab="tabRips">Registros RIPS</button>
+</div>
+<div class="modal-body">
+ <!-- TAB PACIENTES -->
+ <div id="tabPatients" class="tab-content">
+  <div class="section-head">
+   <h3>Listado de Pacientes</h3>
+   <button class="btn primary" id="btnExportPatients">Exportar JSON/CSV</button>
+  </div>
+  <div class="table-wrap">
+   <table>
+    <thead><tr><th>Documento</th><th>Nombre Completo</th><th>EPS</th><th>Tipo</th><th>Hábeas Data</th><th>Acciones</th></tr></thead>
+    <tbody id="dbPatientsTable"></tbody>
+   </table>
+  </div>
+ </div>
+
+ <!-- TAB CUPS -->
+ <div id="tabCups" class="tab-content hidden">
+  <div class="section-head">
+   <h3>Catálogo de Procedimientos CUPS</h3>
+   <button class="btn primary" id="btnNewCupsBtn">＋ Nuevo Servicio CUPS</button>
+  </div>
+  <div class="table-wrap">
+   <table>
+    <thead><tr><th>Código CUPS</th><th>Nombre del Servicio</th><th>Categoría</th><th>Tarifa Particular</th><th>Acciones</th></tr></thead>
+    <tbody id="dbCupsTable"></tbody>
+   </table>
+  </div>
+ </div>
+
+ <!-- TAB VENTAS -->
+ <div id="tabSales" class="tab-content hidden">
+  <div class="section-head">
+   <h3>Historial de Ventas y Cotizaciones</h3>
+   <button class="btn primary" id="btnExportSales">Exportar Ventas CSV</button>
+  </div>
+  <div class="table-wrap">
+   <table>
+    <thead><tr><th>ID Venta</th><th>Fecha</th><th>Paciente</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody id="dbSalesTable"></tbody>
+   </table>
+  </div>
+ </div>
+
+ <!-- TAB RIPS -->
+ <div id="tabRips" class="tab-content hidden">
+  <div class="section-head">
+   <h3>Historial RIPS Generados (Res. 2275)</h3>
+   <button class="btn primary" id="btnExportRips">Exportar RIPS JSON</button>
+  </div>
+  <div class="table-wrap">
+   <table>
+    <thead><tr><th>ID Cotización</th><th>Fecha Consulta</th><th>Causa Externa</th><th>Diagnóstico CIE-10</th><th>Estado</th></tr></thead>
+    <tbody id="dbRipsTable"></tbody>
+   </table>
+  </div>
+ </div>
+</div>
+</div>
+</div>
+
+<!-- MODAL CON SCRIPT SQL SUPABASE -->
+<div class="modal-overlay" id="sqlModal">
+<div class="modal-box" style="max-width:750px">
+<div class="modal-header">
+ <h2>📜 Script SQL de Inicialización para Supabase</h2>
+ <button class="btn icon-btn danger" id="closeSqlModalBtn">✕</button>
+</div>
+<div class="modal-body">
+ <p>Copia y ejecuta este script SQL en el editor de SQL de tu consola de Supabase para crear las tablas necesarias:</p>
+ <textarea class="field" rows="15" readonly style="font-family:monospace;font-size:11px;background:#030c17" id="sqlScriptArea"></textarea>
+ <button class="btn primary" id="btnCopySql" style="margin-top:10px">Copiar Script SQL</button>
+</div>
+</div>
+</div>
+
+<footer>
+<div style="font-family:Orbitron,sans-serif;letter-spacing:2px;color:var(--cyan)">SPASERVIS · GESTIÓN ODONTOLÓGICA COLOMBIA</div>
+<p>Sincronizado con Supabase · Normativa de Salud Vigente en Colombia</p>
+<p>Año Operativo: <span id="footerYear"></span></p>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+(()=>{
+const $=id=>document.getElementById(id);
+
+// Credenciales fijas de Supabase
+const SUPABASE_URL = "https://ewepuftyygkhqfoqxufh.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_u1ueefVFlcFwNBgdHvCoMQ_gLRhV7KN";
+let sbClient = null;
+
+// Claves de Almacenamiento Local
+const KEYS = {
+ patients: "spaservis_odonto_pacientes_v1",
+ cups: "spaservis_odonto_cups_v1",
+ sales: "spaservis_odonto_ventas_v1",
+ rips: "spaservis_odonto_rips_v1"
+};
+
+// Datos Iniciales por Defecto para Odontología en Colombia (CUPS)
+const initialCups = [
+ {id:"c1", codigo_cups:"890201", nombre_servicio:"Consulta de Primera Vez por Odontología General", categoria:"Diagnóstico", tarifa_particular:60000, tarifa_copago:10000},
+ {id:"c2", codigo_cups:"992501", nombre_servicio:"Detartraje Subgingival / Profilaxis Dental", categoria:"Prevención", tarifa_particular:120000, tarifa_copago:15000},
+ {id:"c3", codigo_cups:"230101", nombre_servicio:"Obturación Dental con Resina Fotocurada", categoria:"Operatoria", tarifa_particular:95000, tarifa_copago:20000},
+ {id:"c4", codigo_cups:"232100", nombre_servicio:"Tratamiento de Conductos Unirradicular (Endodoncia)", categoria:"Endodoncia", tarifa_particular:280000, tarifa_copago:45000},
+ {id:"c5", codigo_cups:"237101", nombre_servicio:"Exodoncia Simple de Diente Permanente", categoria:"Cirugía", tarifa_particular:85000, tarifa_copago:15000},
+ {id:"c6", codigo_cups:"997101", nombre_servicio:"Blanqueamiento Dental Estético por Sesión", categoria:"Estética", tarifa_particular:220000, tarifa_copago:220000},
+ {id:"c7", codigo_cups:"890301", nombre_servicio:"Valoración Odontológica Especializada (Ortodoncia/Rehabilitación)", categoria:"Especializada", tarifa_particular:90000, tarifa_copago:25000}
+];
+
+const initialPatients = [
+ {id:"p1", tipo_documento:"CC", numero_documento:"10203040", primer_nombre:"María", segundo_nombre:"Fernanda", primer_apellido:"Gómez", segundo_apellido:"Ríos", eps:"Sura EPS", tipo_usuario:"Contributivo", habeas_data_consent:true},
+ {id:"p2", tipo_documento:"CC", numero_documento:"98765432", primer_nombre:"Carlos", segundo_nombre:"", primer_apellido:"Restrepo", segundo_apellido:"Zapata", eps:"Coosalud", tipo_usuario:"Subsidiado", habeas_data_consent:true}
+];
+
+// Estado de la Aplicación
+let patients = readStorage(KEYS.patients, initialPatients);
+let cupsCatalog = readStorage(KEYS.cups, initialCups);
+let sales = readStorage(KEYS.sales, []);
+let ripsRecords = readStorage(KEYS.rips, []);
+let cart = [];
+let selectedTooth = null;
+
+function readStorage(key, fallback){
+ try{ const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }catch{ return fallback; }
+}
+function writeStorage(key, val){
+ try{ localStorage.setItem(key, JSON.stringify(val)); return true; }catch{ return false; }
+}
+
+let toastTimer;
+function notify(msg){
+ const t = $("toast"); t.textContent = msg; t.classList.add("show");
+ clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove("show"), 3200);
+}
+
+// Inicializar Supabase
+function initSupabase(){
+ try{
+  if(window.supabase && typeof window.supabase.createClient === "function"){
+   sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+   syncSupabase();
+  }
+ }catch(e){ console.warn("Supabase en modo offline:", e); }
+}
+
+async function syncSupabase(){
+ if(!sbClient) return;
+ try {
+  // Sincronizar Pacientes
+  const {data: pData} = await sbClient.from("pacientes").select("*");
+  if(pData && pData.length > 0){ patients = pData; writeStorage(KEYS.patients, patients); }
+  else if(pData && pData.length === 0 && patients.length > 0){ await sbClient.from("pacientes").upsert(patients); }
+
+  // Sincronizar CUPS
+  const {data: cData} = await sbClient.from("servicios_odontologicos").select("*");
+  if(cData && cData.length > 0){ cupsCatalog = cData; writeStorage(KEYS.cups, cupsCatalog); }
+  else if(cData && cData.length === 0 && cupsCatalog.length > 0){ await sbClient.from("servicios_odontologicos").upsert(cupsCatalog); }
+
+  renderAll();
+ } catch(e){ console.error("Error al sincronizar Supabase", e); }
+}
+
+// Renderizado de Odontograma (Notación FDI: Cuadrantes 1, 2, 3, 4)
+function renderOdontogram(){
+ const up = $("quadrantUp"), down = $("quadrantDown");
+ up.innerHTML = ""; down.innerHTML = "";
+
+ const teethUp = [18,17,16,15,14,13,12,11, 21,22,23,24,25,26,27,28];
+ const teethDown = [48,47,46,45,44,43,42,41, 31,32,33,34,35,36,37,38];
+
+ teethUp.forEach(t => {
+  const btn = document.createElement("button");
+  btn.className = `tooth-btn ${selectedTooth === t ? 'selected' : ''}`;
+  btn.innerHTML = `<span>${t}</span><small>Diente</small>`;
+  btn.onclick = () => selectTooth(t);
+  up.appendChild(btn);
+ });
+
+ teethDown.forEach(t => {
+  const btn = document.createElement("button");
+  btn.className = `tooth-btn ${selectedTooth === t ? 'selected' : ''}`;
+  btn.innerHTML = `<span>${t}</span><small>Diente</small>`;
+  btn.onclick = () => selectTooth(t);
+  down.appendChild(btn);
+ });
+}
+
+function selectTooth(t){
+ selectedTooth = selectedTooth === t ? null : t;
+ $("inputToothNum").value = selectedTooth || "";
+ renderOdontogram();
+}
+
+// Renderizado de Selects y Tablas
+function renderAll(){
+ $("statPatients").textContent = patients.length;
+ $("statCups").textContent = cupsCatalog.length;
+ $("statSales").textContent = sales.length;
+ $("statRips").textContent = ripsRecords.length;
+
+ // Fill Select Patients
+ const pSelect = $("selectPatient");
+ pSelect.innerHTML = '<option value="">-- Seleccionar Paciente --</option>' + 
+  patients.map(p => `<option value="${p.id}">${p.numero_documento} - ${p.primer_nombre} ${p.primer_apellido}</option>`).join("");
+
+ // Fill Select CUPS
+ const cSelect = $("selectCups");
+ cSelect.innerHTML = cupsCatalog.map(c => `<option value="${c.id}">[${c.codigo_cups}] ${c.nombre_servicio} - $${c.tarifa_particular.toLocaleString()} COP</option>`).join("");
+
+ renderCart();
+ renderDbTables();
+}
+
+// Agregar al Carrito
+$("btnAddService").addEventListener("click", ()=>{
+ const cId = $("selectCups").value;
+ const qty = parseInt($("inputQty").value) || 1;
+ const tooth = $("inputToothNum").value.trim();
+ const service = cupsCatalog.find(c => c.id === cId);
+
+ if(!service) return notify("Selecciona un servicio válido.");
+
+ cart.push({
+  id: "item_" + Date.now(),
+  serviceId: service.id,
+  cups: service.codigo_cups,
+  name: service.nombre_servicio,
+  tooth: tooth || "General",
+  qty: qty,
+  price: service.tarifa_particular,
+  subtotal: service.tarifa_particular * qty
+ });
+
+ $("inputToothNum").value = "";
+ selectedTooth = null;
+ renderOdontogram();
+ renderCart();
+ notify("Procedimiento agregado a la cotización.");
+});
+
+function renderCart(){
+ const tbody = $("cartTable");
+ if(cart.length === 0){
+  tbody.innerHTML = '<tr><td colspan="7" class="empty">No hay procedimientos agregados a la cotización.</td></tr>';
+  $("cartTotal").textContent = "$0 COP";
+  return;
+ }
+
+ let total = 0;
+ tbody.innerHTML = cart.map((item, index) => {
+  total += item.subtotal;
+  return `<tr>
+   <td><strong>${item.cups}</strong></td>
+   <td>${item.name}</td>
+   <td><span class="pill">${item.tooth}</span></td>
+   <td>${item.qty}</td>
+   <td>$${item.price.toLocaleString()} COP</td>
+   <td>$${item.subtotal.toLocaleString()} COP</td>
+   <td><button class="btn danger" style="padding:4px 8px;font-size:10px" onclick="removeCartItem(${index})">✕</button></td>
+  </tr>`;
+ }).join("");
+
+ $("cartTotal").textContent = `$${total.toLocaleString()} COP`;
+}
+
+window.removeCartItem = (index) => {
+ cart.splice(index, 1);
+ renderCart();
+};
+
+$("btnClearCart").addEventListener("click", ()=>{
+ cart = [];
+ renderCart();
+ notify("Cotización limpiada.");
+});
+
+// Guardar o Seleccionar Paciente Rápido
+$("btnQuickPatient").addEventListener("click", async ()=>{
+ const numDoc = $("pNumDoc").value.trim();
+ const name = $("pFirstName").value.trim();
+ const lastName = $("pLastName").value.trim();
+
+ if(!numDoc || !name || !lastName){
+  return notify("Completa los campos obligatorios del paciente.");
+ }
+
+ const newPatient = {
+  id: "p_" + Date.now(),
+  tipo_documento: $("pTypeDoc").value,
+  numero_documento: numDoc,
+  primer_nombre: name,
+  segundo_nombre: "",
+  primer_apellido: lastName,
+  segundo_apellido: "",
+  eps: $("pEps").value || "Particular",
+  tipo_usuario: $("pUserType").value,
+  habeas_data_consent: $("pHabeasData").checked
+ };
+
+ patients.push(newPatient);
+ writeStorage(KEYS.patients, patients);
+
+ if(sbClient){
+  try { await sbClient.from("pacientes").upsert(newPatient); } catch(e){}
+ }
+
+ renderAll();
+ $("selectPatient").value = newPatient.id;
+ notify("Paciente guardado y seleccionado correctamente.");
+});
+
+// Finalizar Venta y Generar RIPS
+$("btnFinalizeSale").addEventListener("click", async ()=>{
+ const patientId = $("selectPatient").value;
+ if(!patientId) return notify("Debes seleccionar un paciente registrado.");
+ if(cart.length === 0) return notify("El carrito de cotización está vacío.");
+
+ const patient = patients.find(p => p.id === patientId);
+ const total = cart.reduce((acc, i) => acc + i.subtotal, 0);
+
+ const newSale = {
+  id: "vta_" + Date.now(),
+  paciente_id: patient.id,
+  paciente_nombre: `${patient.primer_nombre} ${patient.primer_apellido}`,
+  fecha: new Date().toISOString().split("T")[0],
+  total: total,
+  estado: "Completado",
+  rips_generado: true
+ };
+
+ const newRips = {
+  id: "rips_" + Date.now(),
+  cotizacion_id: newSale.id,
+  codigo_prestador: "0500100001",
+  fecha_consulta: new Date().toISOString().split("T")[0],
+  modalidad_atencion: "01 - Intramural",
+  causa_externa: "13 - Enfermedad General",
+  finalidad_consulta: "10 - Prevención / Diagnóstico Odontológico",
+  codigo_diagnostico_principal: "K021 - Caries de la dentina"
+ };
+
+ sales.push(newSale);
+ ripsRecords.push(newRips);
+
+ writeStorage(KEYS.sales, sales);
+ writeStorage(KEYS.rips, ripsRecords);
+
+ if(sbClient){
+  try {
+   await sbClient.from("cotizaciones_ventas").upsert(newSale);
+   await sbClient.from("rips_odonto").upsert(newRips);
+  } catch(e){}
+ }
+
+ generateQR(newSale);
+ cart = [];
+ renderCart();
+ renderAll();
+ notify("¡Venta registrada y RIPS generado exitosamente!");
+});
+
+// Generador de Código QR para Cotizaciones
+function generateQR(sale){
+ const qrBox = $("qrOutput");
+ qrBox.innerHTML = "";
+ const qrText = `SPASERVIS ODONTO\nCotizacion: ${sale.id}\nPaciente: ${sale.paciente_nombre}\nTotal: $${sale.total} COP\nFecha: ${sale.fecha}`;
+ new QRCode(qrBox, {
+  text: qrText,
+  width: 180,
+  height: 180,
+  colorDark: "#061426",
+  colorLight: "#ffffff"
+ });
+}
+
+$("btnDownloadQr").addEventListener("click", ()=>{
+ const canvas = $("qrOutput").querySelector("canvas");
+ if(!canvas) return notify("Primero genera una venta/cotización.");
+ const a = document.createElement("a");
+ a.href = canvas.toDataURL("image/png");
+ a.download = "cotizacion_odonto_qr.png";
+ a.click();
+});
+
+// Renderizado de Tablas en el Modal DB
+function renderDbTables(){
+ $("dbPatientsTable").innerHTML = patients.map(p => `<tr>
+  <td>${p.tipo_documento} ${p.numero_documento}</td>
+  <td>${p.primer_nombre} ${p.primer_apellido}</td>
+  <td>${p.eps}</td>
+  <td>${p.tipo_usuario}</td>
+  <td>${p.habeas_data_consent ? "✓ Sí (Aceptado)" : "✕ No"}</td>
+  <td><button class="btn danger" style="padding:4px 8px;font-size:10px" onclick="deletePatient('${p.id}')">Eliminar</button></td>
+ </tr>`).join("") || '<tr><td colspan="6">Sin registros.</td></tr>';
+
+ $("dbCupsTable").innerHTML = cupsCatalog.map(c => `<tr>
+  <td><strong>${c.codigo_cups}</strong></td>
+  <td>${c.nombre_servicio}</td>
+  <td>${c.categoria}</td>
+  <td>$${c.tarifa_particular.toLocaleString()} COP</td>
+  <td><button class="btn danger" style="padding:4px 8px;font-size:10px" onclick="deleteCups('${c.id}')">Eliminar</button></td>
+ </tr>`).join("");
+
+ $("dbSalesTable").innerHTML = sales.map(s => `<tr>
+  <td>${s.id}</td>
+  <td>${s.fecha}</td>
+  <td>${s.paciente_nombre}</td>
+  <td>$${s.total.toLocaleString()} COP</td>
+  <td><span class="pill" style="color:var(--good)">${s.estado}</span></td>
+  <td><button class="btn" style="padding:4px 8px;font-size:10px" onclick="generateQR({id:'${s.id}',paciente_nombre:'${s.paciente_nombre}',total:${s.total},fecha:'${s.fecha}'});document.getElementById('dbModal').classList.remove('open')">Ver QR</button></td>
+ </tr>`).join("") || '<tr><td colspan="6">Sin ventas registradas.</td></tr>';
+
+ $("dbRipsTable").innerHTML = ripsRecords.map(r => `<tr>
+  <td>${r.cotizacion_id}</td>
+  <td>${r.fecha_consulta}</td>
+  <td>${r.causa_externa}</td>
+  <td>${r.codigo_diagnostico_principal}</td>
+  <td><span class="pill">Validado Res. 2275</span></td>
+ </tr>`).join("") || '<tr><td colspan="5">Sin RIPS generados.</td></tr>';
+}
+
+window.deletePatient = (id) => {
+ patients = patients.filter(p => p.id !== id);
+ writeStorage(KEYS.patients, patients);
+ renderAll();
+};
+
+window.deleteCups = (id) => {
+ cupsCatalog = cupsCatalog.filter(c => c.id !== id);
+ writeStorage(KEYS.cups, cupsCatalog);
+ renderAll();
+};
+
+// Control de Modales y Pestañas
+$("openDbManagerBtn").addEventListener("click", () => $("dbModal").classList.add("open"));
+$("closeDbModalBtn").addEventListener("click", () => $("dbModal").classList.remove("open"));
+
+$("sqlModalBtn").addEventListener("click", () => {
+ $("sqlScriptArea").value = `-- SCRIPT DE INICIALIZACIÓN SPASERVIS ODONTO COLOMBIA (SUPABASE)
+
+CREATE TABLE IF NOT EXISTS pacientes (
+ id TEXT PRIMARY KEY,
+ tipo_documento TEXT NOT NULL,
+ numero_documento TEXT NOT NULL,
+ primer_nombre TEXT NOT NULL,
+ segundo_nombre TEXT,
+ primer_apellido TEXT NOT NULL,
+ segundo_apellido TEXT,
+ eps TEXT,
+ tipo_usuario TEXT,
+ habeas_data_consent BOOLEAN DEFAULT true
+);
+
+CREATE TABLE IF NOT EXISTS servicios_odontologicos (
+ id TEXT PRIMARY KEY,
+ codigo_cups TEXT NOT NULL,
+ nombre_servicio TEXT NOT NULL,
+ categoria TEXT,
+ tarifa_particular NUMERIC NOT NULL,
+ tarifa_copago NUMERIC
+);
+
+CREATE TABLE IF NOT EXISTS cotizaciones_ventas (
+ id TEXT PRIMARY KEY,
+ paciente_id TEXT REFERENCES pacientes(id),
+ paciente_nombre TEXT,
+ fecha DATE DEFAULT CURRENT_DATE,
+ total NUMERIC NOT NULL,
+ estado TEXT DEFAULT 'Completado',
+ rips_generado BOOLEAN DEFAULT true
+);
+
+CREATE TABLE IF NOT EXISTS rips_odonto (
+ id TEXT PRIMARY KEY,
+ cotizacion_id TEXT REFERENCES cotizaciones_ventas(id),
+ codigo_prestador TEXT,
+ fecha_consulta DATE DEFAULT CURRENT_DATE,
+ modalidad_atencion TEXT,
+ causa_externa TEXT,
+ finalidad_consulta TEXT,
+ codigo_diagnostico_principal TEXT
+);`;
+ $("sqlModal").classList.add("open");
+});
+
+$("closeSqlModalBtn").addEventListener("click", () => $("sqlModal").classList.remove("open"));
+
+$("btnCopySql").addEventListener("click", () => {
+ const area = $("sqlScriptArea");
+ area.select();
+ document.execCommand("copy");
+ notify("Script SQL copiado al portapapeles.");
+});
+
+// Pestañas del Modal DB
+document.querySelectorAll(".modal-tabs .tab-btn").forEach(btn => {
+ btn.addEventListener("click", (e) => {
+  document.querySelectorAll(".modal-tabs .tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach(c => c.classList.add("hidden"));
+  e.target.classList.add("active");
+  $($(e.target).dataset.tab).classList.remove("hidden");
+ });
+});
+
+// Exportaciones
+$("btnExportPatients").addEventListener("click", () => downloadJSON(patients, "pacientes_odonto.json"));
+$("btnExportSales").addEventListener("click", () => downloadJSON(sales, "ventas_odonto.json"));
+$("btnExportRips").addEventListener("click", () => downloadJSON(ripsRecords, "rips_res2275_odonto.json"));
+
+function downloadJSON(data, filename){
+ const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+ const url = URL.createObjectURL(blob);
+ const a = document.createElement("a");
+ a.href = url; a.download = filename; a.click();
+}
+
+// Búsqueda por Voz
+$("voiceSearchBtn").addEventListener("click", ()=>{
+ const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+ if(!Rec) return notify("Búsqueda por voz no soportada en este navegador.");
+ const rec = new Rec(); rec.lang = "es-CO";
+ rec.onresult = e => {
+  const text = e.results[0][0].transcript.toLowerCase();
+  notify(`Buscando: "${text}"`);
+  const found = cupsCatalog.find(c => c.nombre_servicio.toLowerCase().includes(text));
+  if(found){
+   $("selectCups").value = found.id;
+  }
+ };
+ rec.start();
+});
+
+// Lectura en voz alta
+$("speakBtn").addEventListener("click", ()=>{
+ if(!('speechSynthesis' in window)) return notify("Lectura no soportada.");
+ const u = new SpeechSynthesisUtterance("Bienvenido a Spaservis Odonto. Sistema de venta de servicios odontológicos en Colombia.");
+ u.lang = "es-CO";
+ window.speechSynthesis.speak(u);
+});
+
+// Tema claro / oscuro
+$("themeBtn").addEventListener("click", ()=>{
+ document.body.classList.toggle("light");
+});
+
+// Reloj y Año
+function updateClock(){ $("liveClock").textContent = new Date().toLocaleTimeString("es-CO"); }
+setInterval(updateClock, 1000); updateClock();
+$("footerYear").textContent = new Date().getFullYear();
+
+// Inicialización de Escena 3D Three.js Hero
+function init3D(){
+ const canvas = $("scene3d");
+ if(!window.THREE) return;
+ try {
+  const renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
+  renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+  camera.position.z = 6;
+
+  const light = new THREE.DirectionalLight(0x40e8ff, 2); light.position.set(2,2,5); scene.add(light);
+  const ambient = new THREE.AmbientLight(0x061426, 1.5); scene.add(ambient);
+
+  // Figura estilizada de un Molar / Núcleo Médico
+  const geo = new THREE.IcosahedronGeometry(1.5, 1);
+  const mat = new THREE.MeshStandardMaterial({color: 0x1677ff, wireframe: true, roughness: 0.1});
+  const mesh = new THREE.Mesh(geo, mat); scene.add(mesh);
+
+  const ringGeo = new THREE.TorusGeometry(2.2, 0.02, 16, 100);
+  const ringMat = new THREE.MeshBasicMaterial({color: 0xf5c96a});
+  const ring = new THREE.Mesh(ringGeo, ringMat); scene.add(ring);
+
+  function animate(){
+   requestAnimationFrame(animate);
+   mesh.rotation.y += 0.01;
+   ring.rotation.x += 0.005;
+   renderer.render(scene, camera);
+  }
+  animate();
+ }catch(e){}
+}
+
+// Fondo de Estrellas
+(function(){
+ const c = $("starfield"), ctx = c.getContext("2d");
+ function resize(){ c.width = window.innerWidth; c.height = window.innerHeight; }
+ resize(); window.addEventListener("resize", resize);
+ const stars = Array.from({length: 100}, () => ({x: Math.random()*c.width, y: Math.random()*c.height, r: Math.random()*1.5}));
+ function draw(){
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.fillStyle = "#40e8ff88";
+  stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill(); });
+  requestAnimationFrame(draw);
+ }
+ draw();
+})();
+
+// Inicio
+renderOdontogram();
+renderAll();
+initSupabase();
+setTimeout(init3D, 500);
+
+})();
+</script>
+</body>
+</html>
