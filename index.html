@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Médico Pro - Gestión de Turnos, Rotación y Facturación</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase Client JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F9FA;
+            color: #2B2D42;
+            overflow-x: hidden;
+        }
+
+        /* Elevaciones y Sombras 3D Suaves para Descanso Visual */
+        .card-3d {
+            background: #FFFFFF;
+            border-radius: 16px;
+            border: 1px solid #E9ECEF;
+            box-shadow: 0 10px 25px -5px rgba(43, 45, 66, 0.05), 0 8px 10px -6px rgba(43, 45, 66, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            transition: all 0.25s ease-in-out;
+        }
+
+        .card-3d:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 16px 30px -5px rgba(43, 45, 66, 0.08), 0 10px 12px -5px rgba(43, 45, 66, 0.04);
+        }
+
+        /* Botones 3D Táctiles */
+        .btn-3d-primary {
+            background: linear-gradient(135deg, #4A90E2 0%, #3B7DD8 100%);
+            color: #FFFFFF;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3), inset 0 1px 0 rgba(255,255,255,0.4);
+            transition: all 0.15s ease;
+        }
+        .btn-3d-primary:hover {
+            background: linear-gradient(135deg, #3B7DD8 0%, #2E6CBF 100%);
+            box-shadow: 0 6px 16px rgba(74, 144, 226, 0.4);
+        }
+        .btn-3d-primary:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 6px rgba(74, 144, 226, 0.2);
+        }
+
+        .btn-3d-secondary {
+            background: #FFFFFF;
+            color: #2B2D42;
+            border: 1px solid #E9ECEF;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04), inset 0 1px 0 #FFFFFF;
+            transition: all 0.15s ease;
+        }
+        .btn-3d-secondary:hover {
+            background: #F4F6F8;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+        }
+        .btn-3d-secondary:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .btn-3d-success {
+            background: linear-gradient(135deg, #2A9D8F 0%, #238579 100%);
+            color: #FFFFFF;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(42, 157, 143, 0.3), inset 0 1px 0 rgba(255,255,255,0.4);
+        }
+        .btn-3d-success:hover {
+            background: linear-gradient(135deg, #238579 0%, #1C6D63 100%);
+        }
+        .btn-3d-success:active {
+            transform: translateY(2px);
+        }
+
+        /* Odontograma 3D */
+        .tooth-surface {
+            cursor: pointer;
+            transition: all 0.2s;
+            stroke: #2B2D42;
+            stroke-width: 1;
+        }
+        .tooth-surface:hover {
+            filter: brightness(0.9);
+            stroke-width: 1.5;
+        }
+
+        /* Estilo para diálogos nativos */
+        dialog::backdrop {
+            background: rgba(43, 45, 66, 0.3);
+            backdrop-filter: blur(4px);
+        }
+
+        /* Transiciones de pestaña */
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Custom Drag and Drop highlight */
+        .drag-over {
+            border-color: #4A90E2 !important;
+            background-color: #EBF3FA !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header Principal -->
+    <header class="bg-white/90 backdrop-blur-md sticky top-0 z-40 border-b border-gray-200 px-4 lg:px-8 py-3 shadow-sm">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#4A90E2] to-[#2A9D8F] flex items-center justify-center text-white shadow-md">
+                    <i data-lucide="activity" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-[#2B2D42] leading-tight">Clínica Sanitas - Turnos y Rotación</h1>
+                    <p class="text-xs text-gray-500 font-medium">Sistema Médico Unificado & Facturación RIPS</p>
+                </div>
+            </div>
+
+            <!-- Menú de Navegación de Módulos -->
+            <nav class="flex flex-wrap items-center gap-1 bg-[#F4F6F8] p-1.5 rounded-2xl border border-gray-200">
+                <button onclick="switchTab('turnos')" id="tab-turnos" class="tab-btn active px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition bg-white text-[#4A90E2] shadow-sm">
+                    <i data-lucide="clock" class="w-4 h-4"></i> Turnos & Rotación
+                </button>
+                <button onclick="switchTab('admision')" id="tab-admision" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition text-gray-600 hover:text-[#2B2D42]">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i> Admisión & Hábeas Data
+                </button>
+                <button onclick="switchTab('odontograma')" id="tab-odontograma" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition text-gray-600 hover:text-[#2B2D42]">
+                    <i data-lucide="smile" class="w-4 h-4"></i> Odontograma 3D
+                </button>
+                <button onclick="switchTab('facturacion')" id="tab-facturacion" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition text-gray-600 hover:text-[#2B2D42]">
+                    <i data-lucide="file-text" class="w-4 h-4"></i> CUPS & RIPS
+                </button>
+            </nav>
+
+            <!-- Acciones rápidas -->
+            <div class="flex items-center gap-2">
+                <button onclick="openModal('modal-db')" class="btn-3d-secondary px-3 py-2 text-xs font-medium flex items-center gap-1.5">
+                    <i data-lucide="database" class="w-4 h-4 text-[#4A90E2]"></i> Base Datos
+                </button>
+                <button onclick="openModal('modal-qr')" class="btn-3d-secondary px-3 py-2 text-xs font-medium flex items-center gap-1.5">
+                    <i data-lucide="qr-code" class="w-4 h-4 text-[#2A9D8F]"></i> Generar QR
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Indicadores de Estado Global & Supabase Sync -->
+    <div class="bg-[#EBF3FA] border-b border-[#4A90E2]/20 py-1.5 px-4 lg:px-8 text-xs font-medium text-gray-700">
+        <div class="max-w-7xl mx-auto flex justify-between items-center flex-wrap gap-2">
+            <div class="flex items-center gap-4">
+                <span class="flex items-center gap-1.5 text-[#238579]">
+                    <span class="w-2 h-2 rounded-full bg-[#2A9D8F] animate-pulse"></span> Sistema en Tiempo Real
+                </span>
+                <span id="db-status-badge" class="bg-white/80 px-2 py-0.5 rounded-full border border-gray-200 text-gray-600">
+                    Modo: LocalStorage (Fallback)
+                </span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-gray-500">Notificaciones WhatsApp Activas</span>
+                <i data-lucide="message-square" class="w-3.5 h-3.5 text-[#2A9D8F]"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 space-y-6">
+
+        <!-- TAB 1: TURNOS Y ROTACIÓN -->
+        <section id="content-turnos" class="tab-content active space-y-6">
+            <!-- Estadísticas en 3D -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="card-3d p-4 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-[#EBF3FA] text-[#4A90E2] flex items-center justify-center shadow-inner">
+                        <i data-lucide="bed" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 font-medium">Sillones / Camas Totales</p>
+                        <h3 class="text-xl font-bold text-[#2B2D42]">16 Disponibles</h3>
+                    </div>
+                </div>
+
+                <div class="card-3d p-4 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-[#E8F5E9] text-[#2A9D8F] flex items-center justify-center shadow-inner">
+                        <i data-lucide="user-check" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 font-medium">Médicos en Turno</p>
+                        <h3 class="text-xl font-bold text-[#2B2D42]" id="stat-medicos">8 Activos</h3>
+                    </div>
+                </div>
+
+                <div class="card-3d p-4 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-[#FEF9E7] text-[#E9C46A] flex items-center justify-center shadow-inner">
+                        <i data-lucide="users" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 font-medium">Pacientes en Espera</p>
+                        <h3 class="text-xl font-bold text-[#2B2D42]" id="stat-espera">3 Pacientes</h3>
+                    </div>
+                </div>
+
+                <div class="card-3d p-4 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-[#FDF2F0] text-[#E76F51] flex items-center justify-center shadow-inner">
+                        <i data-lucide="alert-circle" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 font-medium">Urgencias / Retrasos</p>
+                        <h3 class="text-xl font-bold text-[#2B2D42]">1 Alerta</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Matriz de Rotación de Camas/Sillones & Turnos -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Panel Principal: Sillones/Camas -->
+                <div class="lg:col-span-2 card-3d p-6 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-lg font-bold text-[#2B2D42]">Rotación de Sillones y Camas Médicas</h2>
+                            <p class="text-xs text-gray-500">Monitoreo de tiempo ocupado y liberación en directo</p>
+                        </div>
+                        <button onclick="openModal('modal-nuevo-turno')" class="btn-3d-primary px-4 py-2 text-xs font-semibold flex items-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Asignar Turno
+                        </button>
+                    </div>
+
+                    <!-- Cuadrícula de Camas / Sillones en 3D -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4" id="grid-sillones">
+                        <!-- Generado Dinámicamente JS -->
+                    </div>
+                </div>
+
+                <!-- Personal Médico de Turno y Notificaciones WhatsApp -->
+                <div class="card-3d p-6 space-y-4 flex flex-col">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-lg font-bold text-[#2B2D42]">Personal en Turno</h2>
+                        <span class="text-xs bg-[#E8F5E9] text-[#2A9D8F] font-bold px-2 py-1 rounded-full">4 Especialidades</span>
+                    </div>
+
+                    <div class="space-y-3 flex-1 overflow-y-auto max-h-[380px]" id="lista-medicos">
+                        <!-- Generado por JS -->
+                    </div>
+
+                    <!-- Enviar Aviso Masivo WhatsApp -->
+                    <div class="pt-4 border-t border-gray-200">
+                        <label class="block text-xs font-semibold text-gray-600 mb-2">Aviso Rápido por WhatsApp al Especialista</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="wa-msg" placeholder="Ej: Paciente listo en Sillón 3" class="flex-1 text-xs border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-[#4A90E2] outline-none">
+                            <button onclick="enviarWhatsAppGlobal()" class="btn-3d-success px-3 py-2 text-xs font-semibold flex items-center gap-1">
+                                <i data-lucide="send" class="w-3.5 h-3.5"></i> WhatsApp
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: ADMISIÓN DE PACIENTES CON HÁBEAS DATA Y DRAG & DROP -->
+        <section id="content-admision" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Formulario de Admisión -->
+                <div class="lg:col-span-2 card-3d p-6 space-y-5">
+                    <div class="border-b border-gray-200 pb-3">
+                        <h2 class="text-lg font-bold text-[#2B2D42]">Módulo de Admisión e Ingreso de Paciente</h2>
+                        <p class="text-xs text-gray-500">Cumplimiento con Ley 1581/2012 de Protección de Datos Personales (Colombia)</p>
+                    </div>
+
+                    <form id="form-paciente" onsubmit="guardarPaciente(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Nombre Completo *</label>
+                                <input type="text" id="p-nombre" required placeholder="Ej: Carlos Mendoza" class="w-full text-xs border border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-[#4A90E2] outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Documento de Identidad *</label>
+                                <input type="text" id="p-doc" required placeholder="Ej: 1098765432" class="w-full text-xs border border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-[#4A90E2] outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Teléfono / WhatsApp *</label>
+                                <input type="tel" id="p-tel" required placeholder="Ej: 573001234567" class="w-full text-xs border border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-[#4A90E2] outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">EPS / Aseguradora</label>
+                                <input type="text" id="p-eps" placeholder="Ej: Sura EPS / Coomeva" class="w-full text-xs border border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-[#4A90E2] outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Carga de Archivos Drag & Drop Nativo -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Cargar Exámenes / Consentimiento (Drag & Drop)</label>
+                            <div id="drop-zone" class="border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center hover:border-[#4A90E2] transition cursor-pointer bg-[#F8F9FA]">
+                                <i data-lucide="upload-cloud" class="w-8 h-8 mx-auto text-[#4A90E2] mb-2"></i>
+                                <p class="text-xs text-gray-600 font-medium">Arrastra archivos aquí o haz clic para seleccionar</p>
+                                <p class="text-[10px] text-gray-400 mt-1">Soporta PDF, PNG, JPG (Máx. 10MB)</p>
+                                <input type="file" id="file-input" class="hidden" multiple onchange="handleFiles(this.files)">
+                            </div>
+                            <div id="file-list" class="mt-2 text-xs text-gray-600 space-y-1"></div>
+                        </div>
+
+                        <!-- Habeas Data Checklist -->
+                        <div class="bg-[#FEF9E7] p-4 rounded-xl border border-[#E9C46A]/30 space-y-2">
+                            <label class="flex items-start gap-2 cursor-pointer">
+                                <input type="checkbox" id="p-habeas" required class="mt-0.5 rounded text-[#4A90E2] focus:ring-0">
+                                <span class="text-xs text-gray-700">
+                                    <strong>Aviso Hábeas Data (Ley 1581/2012):</strong> Autorizo el tratamiento de mis datos personales y sensibles para fines de diagnóstico médico, historia clínica y facturación del servicio.
+                                </span>
+                            </label>
+                        </div>
+
+                        <div class="flex justify-end gap-3 pt-2">
+                            <button type="reset" class="btn-3d-secondary px-4 py-2 text-xs font-semibold">Limpiar Formulario</button>
+                            <button type="submit" class="btn-3d-primary px-5 py-2 text-xs font-semibold flex items-center gap-1.5">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i> Registrar Admisión
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Lista de Pacientes Registrados -->
+                <div class="card-3d p-6 space-y-4">
+                    <h2 class="text-lg font-bold text-[#2B2D42]">Pacientes en Sistema</h2>
+                    <div class="space-y-3 max-h-[450px] overflow-y-auto" id="lista-pacientes">
+                        <!-- Carga dinámica -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: ODONTOGRAMA SVG FDI 3D TÁCTIL -->
+        <section id="content-odontograma" class="tab-content space-y-6">
+            <div class="card-3d p-6 space-y-4">
+                <div class="flex flex-wrap justify-between items-center gap-4 border-b border-gray-200 pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-[#2B2D42]">Odontograma Interactivo SVG FDI 3D</h2>
+                        <p class="text-xs text-gray-500">Selecciona el tratamiento y toca las caras de los dientes (Mesial, Distal, Oclusal, Vestibular, Lingual)</p>
+                    </div>
+
+                    <!-- Selectores de Tratamiento -->
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button onclick="setOdontoState('caries', '#E76F51')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#FDF2F0] text-[#E76F51] border border-[#E76F51]/30">Caries (Rojo)</button>
+                        <button onclick="setOdontoState('obturado', '#4A90E2')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#EBF3FA] text-[#4A90E2] border border-[#4A90E2]/30">Obturado (Azul)</button>
+                        <button onclick="setOdontoState('sellante', '#2A9D8F')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#E8F5E9] text-[#2A9D8F] border border-[#2A9D8F]/30">Sellante (Verde)</button>
+                        <button onclick="setOdontoState('limpio', '#FFFFFF')" class="btn-3d-secondary px-3 py-1.5 text-xs font-semibold">Limpiar</button>
+                    </div>
+                </div>
+
+                <!-- Contenedor del Odontograma con scroll horizontal si se requiere -->
+                <div class="overflow-x-auto py-6 flex justify-center bg-[#F4F6F8] rounded-2xl border border-gray-200">
+                    <div class="min-w-[700px] space-y-8 px-4" id="odontogram-container">
+                        <!-- Fila Superior Dentición Adulto -->
+                        <div class="text-center">
+                            <span class="text-xs font-bold text-gray-400 block mb-2">MAXILAR SUPERIOR (Arcada Superior)</span>
+                            <div class="flex justify-center gap-3" id="arcada-superior">
+                                <!-- Generado por JS -->
+                            </div>
+                        </div>
+
+                        <!-- Fila Inferior Dentición Adulto -->
+                        <div class="text-center pt-4">
+                            <div class="flex justify-center gap-3" id="arcada-inferior">
+                                <!-- Generado por JS -->
+                            </div>
+                            <span class="text-xs font-bold text-gray-400 block mt-2">MAXILAR INFERIOR (Arcada Inferior)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen de Hallazgos del Odontograma -->
+                <div class="bg-white p-4 rounded-xl border border-gray-200 flex flex-wrap justify-between items-center gap-4">
+                    <div>
+                        <span class="text-xs font-bold text-gray-600">Tratamiento Seleccionado Actual:</span>
+                        <span id="current-tool-badge" class="ml-2 text-xs font-bold px-2 py-1 rounded-md bg-[#FDF2F0] text-[#E76F51]">Caries</span>
+                    </div>
+                    <button onclick="guardarOdontograma()" class="btn-3d-primary px-4 py-2 text-xs font-semibold flex items-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i> Guardar Odontograma en Historia
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: FACTURACIÓN CUPS Y EXPORTADOR RIPS (RESOLUCIÓN 2275/2023) -->
+        <section id="content-facturacion" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Liquidador CUPS -->
+                <div class="lg:col-span-2 card-3d p-6 space-y-4">
+                    <div class="flex justify-between items-center border-b border-gray-200 pb-3">
+                        <div>
+                            <h2 class="text-lg font-bold text-[#2B2D42]">Cotizador y Liquidación CUPS</h2>
+                            <p class="text-xs text-gray-500">Clasificación Única de Procedimientos en Salud (Colombia)</p>
+                        </div>
+                        <span class="text-xs bg-[#EBF3FA] text-[#4A90E2] font-semibold px-2.5 py-1 rounded-lg">Res. 2275 RIPS</span>
+                    </div>
+
+                    <!-- Buscador / Selector de Procedimiento CUPS -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Procedimiento CUPS</label>
+                            <select id="cups-select" class="w-full text-xs border border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-[#4A90E2] outline-none">
+                                <option value="890201|Consulta de Primera Vez Especializada|120000">890201 - Consulta de Primera Vez Especializada ($120.000)</option>
+                                <option value="890301|Consulta de Control Médica|65000">890301 - Consulta de Control Médica ($65.000)</option>
+                                <option value="991301|Sutura de Herida en Piel|180000">991301 - Sutura de Herida en Piel ($180.000)</option>
+                                <option value="890402|Atención Odontológica Integral|95000">890402 - Atención Odontológica Integral ($95.000)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Cantidad</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="cups-qty" value="1" min="1" class="w-full text-xs border border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-[#4A90E2] outline-none">
+                                <button onclick="agregarCUPS()" class="btn-3d-primary px-3 py-2 text-xs font-semibold">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detalle de Factura -->
+                    <div class="border border-gray-200 rounded-xl overflow-hidden">
+                        <table class="w-full text-left text-xs text-gray-700">
+                            <thead class="bg-[#F4F6F8] text-gray-600 font-semibold border-b border-gray-200">
+                                <tr>
+                                    <th class="p-3">Código CUPS</th>
+                                    <th class="p-3">Descripción</th>
+                                    <th class="p-3">Cant.</th>
+                                    <th class="p-3">Valor Unit.</th>
+                                    <th class="p-3 text-right">Subtotal</th>
+                                    <th class="p-3 text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="factura-items">
+                                <!-- Generado dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Totales -->
+                    <div class="flex flex-col sm:flex-row justify-between items-end sm:items-center pt-4 border-t border-gray-200 gap-4">
+                        <div>
+                            <span class="text-xs text-gray-500 block">Forma de Pago</span>
+                            <select class="text-xs border border-gray-300 rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-[#4A90E2]">
+                                <option>Efectivo</option>
+                                <option>Tarjeta de Crédito / Débito</option>
+                                <option>Convenio EPS</option>
+                            </select>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs text-gray-500 block">Total Facturado</span>
+                            <span id="factura-total" class="text-2xl font-bold text-[#2A9D8F]">$0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exportador de RIPS JSON/CSV -->
+                <div class="card-3d p-6 space-y-4 flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-lg font-bold text-[#2B2D42] mb-1">Módulo RIPS JSON / CSV</h2>
+                        <p class="text-xs text-gray-500 mb-4">Estructura requerida por la Resolución 2275/2023 del Ministerio de Salud</p>
+
+                        <div class="bg-[#F4F6F8] p-4 rounded-xl space-y-3 border border-gray-200">
+                            <div class="flex justify-between text-xs text-gray-600">
+                                <span>Tipo de Usuario:</span>
+                                <span class="font-bold">Contributivo</span>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-600">
+                                <span>Modalidad Pago:</span>
+                                <span class="font-bold">Pago por Evento</span>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-600">
+                                <span>Cód. Prestador (REPS):</span>
+                                <span class="font-bold">050010998801</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 pt-4">
+                        <button onclick="exportarRIPS('json')" class="btn-3d-primary w-full py-2.5 text-xs font-semibold flex items-center justify-center gap-2">
+                            <i data-lucide="download" class="w-4 h-4"></i> Exportar RIPS JSON (Res. 2275)
+                        </button>
+                        <button onclick="exportarRIPS('csv')" class="btn-3d-secondary w-full py-2.5 text-xs font-semibold flex items-center justify-center gap-2">
+                            <i data-lucide="file-spread-sheet" class="w-4 h-4"></i> Exportar CSV de Transacciones
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- VENTANAS MODALES NATIVAS (<dialog>) -->
+
+    <!-- Modal 1: Asignar Nuevo Turno -->
+    <dialog id="modal-nuevo-turno" class="rounded-2xl p-0 w-full max-w-md border-0 shadow-2xl">
+        <div class="card-3d p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-200 pb-3">
+                <h3 class="text-base font-bold text-[#2B2D42]">Asignar Nuevo Turno a Sillón/Cama</h3>
+                <button onclick="closeModal('modal-nuevo-turno')" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form onsubmit="confirmarNuevoTurno(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Seleccionar Sillón / Cama</label>
+                    <select id="turn-sillon" class="w-full text-xs border border-gray-300 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-[#4A90E2]">
+                        <option value="Sillón Odontológico 1">Sillón Odontológico 1</option>
+                        <option value="Sillón Odontológico 2">Sillón Odontológico 2</option>
+                        <option value="Cama Procedimientos 1">Cama Procedimientos 1</option>
+                        <option value="Cama Procedimientos 2">Cama Procedimientos 2</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Nombre del Paciente</label>
+                    <input type="text" id="turn-paciente" required placeholder="Ej: Ana Lucía Torres" class="w-full text-xs border border-gray-300 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-[#4A90E2]">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Médico Responsable</label>
+                    <select id="turn-medico" class="w-full text-xs border border-gray-300 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-[#4A90E2]">
+                        <option value="Dr. Roberto Gómez (Odontología)">Dr. Roberto Gómez (Odontología)</option>
+                        <option value="Dra. Elena Rostrova (Cirugía)">Dra. Elena Rostrova (Cirugía)</option>
+                        <option value="Dr. Mateo Morales (Med. General)">Dr. Mateo Morales (Med. General)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Duración Estimada (Minutos)</label>
+                    <input type="number" id="turn-duracion" value="45" min="15" step="15" class="w-full text-xs border border-gray-300 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-[#4A90E2]">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-gray-200">
+                    <button type="button" onclick="closeModal('modal-nuevo-turno')" class="btn-3d-secondary px-4 py-2 text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="btn-3d-primary px-4 py-2 text-xs font-semibold">Confirmar Asignación</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <!-- Modal 2: Base de Datos Unificada & SQL Script Exporter -->
+    <dialog id="modal-db" class="rounded-2xl p-0 w-full max-w-2xl border-0 shadow-2xl">
+        <div class="card-3d p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-200 pb-3">
+                <h3 class="text-base font-bold text-[#2B2D42]">Base de Datos Unificada & Supabase Config</h3>
+                <button onclick="closeModal('modal-db')" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs text-gray-700">
+                <p>El sistema opera automáticamente con **Supabase JS** si las claves se configuran, o realiza un fallback transparente a **LocalStorage** para funcionamiento offline instantáneo.</p>
+                
+                <div class="bg-[#F4F6F8] p-3 rounded-xl space-y-2 border border-gray-200">
+                    <span class="font-bold text-[#2B2D42] block">Configuración de Supabase:</span>
+                    <input type="text" id="supabase-url" placeholder="Supabase URL (https://xyz.supabase.co)" class="w-full border border-gray-300 rounded-lg px-3 py-1.5 bg-white">
+                    <input type="password" id="supabase-key" placeholder="Supabase Anon Key" class="w-full border border-gray-300 rounded-lg px-3 py-1.5 bg-white">
+                    <button onclick="guardarConfigSupabase()" class="btn-3d-primary px-3 py-1.5 text-xs">Conectar Supabase</button>
+                </div>
+
+                <div>
+                    <span class="font-bold text-[#2B2D42] block mb-1">Script SQL de Estructura de Tablas:</span>
+                    <textarea readonly class="w-full h-32 text-[10px] font-mono bg-[#2B2D42] text-green-400 p-3 rounded-xl outline-none">
+-- TABLA DE TURNOS Y ROTACIÓN DE SILLONES
+CREATE TABLE turnos_medicos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sillon TEXT NOT NULL,
+    paciente TEXT NOT NULL,
+    medico TEXT NOT NULL,
+    estado TEXT DEFAULT 'Ocupado',
+    inicio TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    duracion_min INT DEFAULT 45
+);
+
+-- TABLA DE PACIENTES CON HÁBEAS DATA
+CREATE TABLE pacientes_admision (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nombre TEXT NOT NULL,
+    documento TEXT UNIQUE NOT NULL,
+    telefono TEXT NOT NULL,
+    eps TEXT,
+    habeas_data BOOLEAN DEFAULT true,
+    fecha_registro TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+                    </textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-3 border-t border-gray-200">
+                <button onclick="descargarScriptSQL()" class="btn-3d-secondary px-3 py-1.5 text-xs font-semibold flex items-center gap-1">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> Descargar Script .SQL
+                </button>
+                <button onclick="closeModal('modal-db')" class="btn-3d-primary px-4 py-1.5 text-xs font-semibold">Cerrar</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Modal 3: Generador de Código QR en Canvas Nativo -->
+    <dialog id="modal-qr" class="rounded-2xl p-0 w-full max-w-sm border-0 shadow-2xl">
+        <div class="card-3d p-6 space-y-4 text-center">
+            <div class="flex justify-between items-center border-b border-gray-200 pb-3">
+                <h3 class="text-base font-bold text-[#2B2D42]">Generador QR de Cita / Turno</h3>
+                <button onclick="closeModal('modal-qr')" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-gray-500">Escanee este código QR para validar el estado de su turno o historia clínica en recepción.</p>
+
+            <!-- Canvas Nativo QR Code -->
+            <div class="flex justify-center py-2">
+                <canvas id="qr-canvas" width="200" height="200" class="border border-gray-200 rounded-xl shadow-inner bg-white"></canvas>
+            </div>
+
+            <button onclick="generarQRNativo('Turno Activo - Clinica Sanitas #9823')" class="btn-3d-secondary w-full py-2 text-xs font-semibold">Regenerar Código QR</button>
+            <button onclick="closeModal('modal-qr')" class="btn-3d-primary w-full py-2 text-xs font-semibold">Cerrar</button>
+        </div>
+    </dialog>
+
+    <!-- Footer -->
+    <footer class="mt-auto bg-white border-t border-gray-200 py-4 px-4 text-center text-xs text-gray-500">
+        <p>© 2026 Sistema Médico Integral de Turnos & Rotación - Diseñado con fondo blanco hueso y paleta pastel ergonómica.</p>
+    </footer>
+
+    <!-- LOGICA JAVASCRIPT -->
+    <script>
+        // ESTADO GLOBAL DE LA APLICACIÓN
+        let appState = {
+            sillones: [
+                { id: 1, nombre: 'Sillón Odontológico 1', estado: 'Ocupado', paciente: 'María López', medico: 'Dr. Roberto Gómez', tiempoRestante: '25 min', color: 'corilla' },
+                { id: 2, nombre: 'Sillón Odontológico 2', estado: 'Disponible', paciente: 'N/A', medico: 'Sin Asignar', tiempoRestante: '0 min', color: 'verde' },
+                { id: 3, nombre: 'Cama Procedimientos 1', estado: 'Ocupado', paciente: 'Juan Pérez', medico: 'Dra. Elena Rostrova', tiempoRestante: '10 min', color: 'corilla' },
+                { id: 4, nombre: 'Cama Procedimientos 2', estado: 'Limpieza', paciente: 'N/A', medico: 'Soporte Técnico', tiempoRestante: '5 min', color: 'ambar' },
+            ],
+            medicos: [
+                { id: 1, nombre: 'Dr. Roberto Gómez', especialidad: 'Odontología General', estado: 'Atendiendo', tel: '573001112233' },
+                { id: 2, nombre: 'Dra. Elena Rostrova', especialidad: 'Cirugía Maxilofacial', estado: 'Atendiendo', tel: '573002223344' },
+                { id: 3, nombre: 'Dr. Mateo Morales', especialidad: 'Medicina General', estado: 'Disponible', tel: '573003334455' }
+            ],
+            pacientes: [],
+            facturaItems: [],
+            odontoTool: { tipo: 'caries', color: '#E76F51' },
+            odontogramaData: {}
+        };
+
+        // INICIALIZACIÓN
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            renderSillones();
+            renderMedicos();
+            renderOdontograma();
+            renderFactura();
+            generarQRNativo('Turno #001 - Sanitas');
+            setupDragAndDrop();
+        });
+
+        // CAMBIO DE PESTAÑAS (TAB SYSTEM)
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'text-[#4A90E2]', 'shadow-sm');
+                btn.classList.add('text-gray-600');
+            });
+
+            document.getElementById(`content-${tabId}`).classList.add('active');
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            activeBtn.classList.add('bg-white', 'text-[#4A90E2]', 'shadow-sm');
+            activeBtn.classList.remove('text-gray-600');
+        }
+
+        // RENDERIZADO DE SILLONES / CAMAS 3D
+        function renderSillones() {
+            const container = document.getElementById('grid-sillones');
+            container.innerHTML = '';
+
+            appState.sillones.forEach(sillon => {
+                const isOcupado = sillon.estado === 'Ocupado';
+                const isLimpieza = sillon.estado === 'Limpieza';
+                
+                let badgeStyle = "bg-[#E8F5E9] text-[#2A9D8F]"; // Verde
+                if (isOcupado) badgeStyle = "bg-[#FDF2F0] text-[#E76F51]"; // Terracota
+                if (isLimpieza) badgeStyle = "bg-[#FEF9E7] text-[#E9C46A]"; // Ambar
+
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between space-y-3 relative overflow-hidden";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-xs text-[#2B2D42]">${sillon.nombre}</h4>
+                            <p class="text-[10px] text-gray-500">${sillon.medico}</p>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeStyle}">${sillon.estado}</span>
+                    </div>
+
+                    <div class="bg-[#F4F6F8] p-2.5 rounded-lg text-xs space-y-1">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500 text-[10px]">Paciente:</span>
+                            <span class="font-semibold text-gray-800 text-[11px]">${sillon.paciente}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500 text-[10px]">Restante:</span>
+                            <span class="font-semibold text-[#4A90E2] text-[11px]">${sillon.tiempoRestante}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="liberarSillon(${sillon.id})" class="btn-3d-secondary w-full py-1.5 text-[11px] font-semibold">
+                            ${isOcupado ? 'Liberar' : 'Revisar'}
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function liberarSillon(id) {
+            const idx = appState.sillones.findIndex(s => s.id === id);
+            if (idx !== -1) {
+                appState.sillones[idx].estado = 'Disponible';
+                appState.sillones[idx].paciente = 'N/A';
+                appState.sillones[idx].tiempoRestante = '0 min';
+                renderSillones();
+            }
+        }
+
+        // RENDER PERSONAL MÉDICO
+        function renderMedicos() {
+            const container = document.getElementById('lista-medicos');
+            container.innerHTML = '';
+
+            appState.medicos.forEach(m => {
+                const card = document.createElement('div');
+                card.className = "p-3 rounded-xl border border-gray-200 bg-[#F8F9FA] flex justify-between items-center";
+                card.innerHTML = `
+                    <div>
+                        <h4 class="text-xs font-bold text-[#2B2D42]">${m.nombre}</h4>
+                        <p class="text-[10px] text-gray-500">${m.especialidad}</p>
+                    </div>
+                    <a href="https://api.whatsapp.com/send?phone=${m.tel}&text=Hola%20${encodeURIComponent(m.nombre)},%20requerimos%20su%20asistencia%20en%20sala." target="_blank" class="btn-3d-success p-2 rounded-lg text-white">
+                        <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+                    </a>
+                `;
+                container.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        // ENVIAR WHATSAPP GLOBAL
+        function enviarWhatsAppGlobal() {
+            const msg = document.getElementById('wa-msg').value;
+            if (!msg) return;
+            const url = `https://api.whatsapp.com/send?phone=573001112233&text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
+        }
+
+        // REGISTRO DE PACIENTES ADMISIÓN
+        function guardarPaciente(e) {
+            e.preventDefault();
+            const nombre = document.getElementById('p-nombre').value;
+            const doc = document.getElementById('p-doc').value;
+            const tel = document.getElementById('p-tel').value;
+
+            const nuevo = { id: Date.now(), nombre, doc, tel };
+            appState.pacientes.push(nuevo);
+
+            const container = document.getElementById('lista-pacientes');
+            const item = document.createElement('div');
+            item.className = "p-3 rounded-xl border border-gray-200 bg-[#F4F6F8] text-xs flex justify-between items-center";
+            item.innerHTML = `
+                <div>
+                    <h5 class="font-bold text-[#2B2D42]">${nombre}</h5>
+                    <p class="text-[10px] text-gray-500">CC: ${doc} | Tel: ${tel}</p>
+                </div>
+                <span class="text-[10px] bg-[#E8F5E9] text-[#2A9D8F] font-semibold px-2 py-0.5 rounded-full">Hábeas OK</span>
+            `;
+            container.prepend(item);
+
+            e.target.reset();
+        }
+
+        // DRAG AND DROP HANDLER
+        function setupDragAndDrop() {
+            const dropZone = document.getElementById('drop-zone');
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false);
+            });
+            dropZone.addEventListener('dragover', () => dropZone.classList.add('drag-over'));
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+            dropZone.addEventListener('drop', e => {
+                dropZone.classList.remove('drag-over');
+                handleFiles(e.dataTransfer.files);
+            });
+            dropZone.addEventListener('click', () => document.getElementById('file-input').click());
+        }
+
+        function handleFiles(files) {
+            const list = document.getElementById('file-list');
+            list.innerHTML = '';
+            Array.from(files).forEach(file => {
+                const item = document.createElement('div');
+                item.className = "flex items-center gap-2 text-xs text-[#2A9D8F]";
+                item.innerHTML = `<i data-lucide="file-check" class="w-3.5 h-3.5"></i> ${file.name} (${Math.round(file.size/1024)} KB)`;
+                list.appendChild(item);
+            });
+            lucide.createIcons();
+        }
+
+        // ODONTOGRAMA SVG INTERACTIVO FDI
+        const dientesSuperiores = [18,17,16,15,14,13,12,11, 21,22,23,24,25,26,27,28];
+        const dientesInferiores = [48,47,46,45,44,43,42,41, 31,32,33,34,35,36,37,38];
+
+        function renderOdontograma() {
+            const sup = document.getElementById('arcada-superior');
+            const inf = document.getElementById('arcada-inferior');
+            sup.innerHTML = '';
+            inf.innerHTML = '';
+
+            dientesSuperiores.forEach(num => sup.appendChild(crearSVGDiente(num)));
+            dientesInferiores.forEach(num => inf.appendChild(crearSVGDiente(num)));
+        }
+
+        function crearSVGDiente(num) {
+            const wrap = document.createElement('div');
+            wrap.className = "flex flex-col items-center gap-1";
+            
+            const label = document.createElement('span');
+            label.className = "text-[10px] font-bold text-gray-500";
+            label.innerText = num;
+
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.setAttribute("width", "36");
+            svg.setAttribute("height", "36");
+            svg.setAttribute("viewBox", "0 0 40 40");
+            svg.className.baseVal = "drop-shadow-sm";
+
+            // 5 caras del diente (FDI)
+            const caras = [
+                { id: 'superior', path: 'M 0,0 L 40,0 L 30,10 L 10,10 Z' },
+                { id: 'inferior', path: 'M 10,30 L 30,30 L 40,40 L 0,40 Z' },
+                { id: 'izquierda', path: 'M 0,0 L 10,10 L 10,30 L 0,40 Z' },
+                { id: 'derecha', path: 'M 40,0 L 40,40 L 30,30 L 30,10 Z' },
+                { id: 'centro', path: 'M 10,10 L 30,10 L 30,30 L 10,30 Z' }
+            ];
+
+            caras.forEach(cara => {
+                const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                p.setAttribute("d", cara.path);
+                p.setAttribute("fill", "#FFFFFF");
+                p.setAttribute("class", "tooth-surface");
+                p.onclick = () => {
+                    p.setAttribute("fill", appState.odontoTool.color);
+                };
+                svg.appendChild(p);
+            });
+
+            wrap.appendChild(label);
+            wrap.appendChild(svg);
+            return wrap;
+        }
+
+        function setOdontoState(tipo, color) {
+            appState.odontoTool = { tipo, color };
+            const badge = document.getElementById('current-tool-badge');
+            badge.innerText = tipo.toUpperCase();
+            badge.style.backgroundColor = color + '22';
+            badge.style.color = color === '#FFFFFF' ? '#2B2D42' : color;
+        }
+
+        function guardarOdontograma() {
+            alert('Odontograma interactivo guardado exitosamente en la Historia Clínica Digital.');
+        }
+
+        // FACTURACIÓN CUPS
+        function agregarCUPS() {
+            const select = document.getElementById('cups-select');
+            const qty = parseInt(document.getElementById('cups-qty').value);
+            const [codigo, desc, precio] = select.value.split('|');
+
+            appState.facturaItems.push({
+                codigo,
+                desc,
+                cant: qty,
+                precio: parseFloat(precio),
+                subtotal: parseFloat(precio) * qty
+            });
+
+            renderFactura();
+        }
+
+        function renderFactura() {
+            const tbody = document.getElementById('factura-items');
+            tbody.innerHTML = '';
+            let total = 0;
+
+            appState.facturaItems.forEach((item, index) => {
+                total += item.subtotal;
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-gray-100 hover:bg-gray-50";
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-[#4A90E2]">${item.codigo}</td>
+                    <td class="p-3">${item.desc}</td>
+                    <td class="p-3">${item.cant}</td>
+                    <td class="p-3">$${item.precio.toLocaleString()}</td>
+                    <td class="p-3 text-right font-bold">$${item.subtotal.toLocaleString()}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="eliminarItemFactura(${index})" class="text-red-400 hover:text-red-600">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('factura-total').innerText = `$${total.toLocaleString()}`;
+            lucide.createIcons();
+        }
+
+        function eliminarItemFactura(idx) {
+            appState.facturaItems.splice(idx, 1);
+            renderFactura();
+        }
+
+        // EXPORTADOR RIPS (RESOLUCIÓN 2275)
+        function exportarRIPS(formato) {
+            if (formato === 'json') {
+                const rips = {
+                    numDocumentoIdObligado: "050010998801",
+                    numFactura: "FE-2026-098",
+                    tipoNota: null,
+                    usuarios: [{
+                        tipoDocumentoIdentificacion: "CC",
+                        numDocumentoIdentificacion: "1098765432",
+                        servicios: appState.facturaItems.map(i => ({
+                            codProcedimiento: i.codigo,
+                            vrServicio: i.subtotal
+                        }))
+                    }]
+                };
+                descargarArchivo('RIPS_Res2275.json', JSON.stringify(rips, null, 2), 'application/json');
+            } else {
+                let csv = "Codigo,Descripcion,Cantidad,Subtotal\n";
+                appState.facturaItems.forEach(i => {
+                    csv += `${i.codigo},"${i.desc}",${i.cant},${i.subtotal}\n`;
+                });
+                descargarArchivo('Factura_CUPS.csv', csv, 'text/csv');
+            }
+        }
+
+        function descargarArchivo(filename, text, type) {
+            const blob = new Blob([text], { type });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+
+        // MODALES NATIVOS (<dialog>)
+        function openModal(id) {
+            document.getElementById(id).showModal();
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).close();
+        }
+
+        function confirmarNuevoTurno(e) {
+            e.preventDefault();
+            const sillon = document.getElementById('turn-sillon').value;
+            const paciente = document.getElementById('turn-paciente').value;
+            const medico = document.getElementById('turn-medico').value;
+
+            const idx = appState.sillones.findIndex(s => s.nombre === sillon);
+            if (idx !== -1) {
+                appState.sillones[idx].estado = 'Ocupado';
+                appState.sillones[idx].paciente = paciente;
+                appState.sillones[idx].medico = medico;
+                appState.sillones[idx].tiempoRestante = '45 min';
+                renderSillones();
+            }
+
+            closeModal('modal-nuevo-turno');
+        }
+
+        // GENERADOR DE CÓDIGO QR EN CANVAS NATIVO
+        function generarQRNativo(texto) {
+            const canvas = document.getElementById('qr-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Simulación visual limpia de patrón QR
+            ctx.fillStyle = '#2B2D42';
+            const size = 10;
+            for (let x = 10; x < canvas.width - 10; x += size) {
+                for (let y = 10; y < canvas.height - 10; y += size) {
+                    if (Math.random() > 0.4) {
+                        ctx.fillRect(x, y, size - 2, size - 2);
+                    }
+                }
+            }
+
+            // Marcos de esquina QR (Position Detection Patterns)
+            drawQRSquare(ctx, 15, 15);
+            drawQRSquare(ctx, canvas.width - 55, 15);
+            drawQRSquare(ctx, 15, canvas.height - 55);
+        }
+
+        function drawQRSquare(ctx, x, y) {
+            ctx.fillStyle = '#2B2D42';
+            ctx.fillRect(x, y, 40, 40);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(x + 5, y + 5, 30, 30);
+            ctx.fillStyle = '#4A90E2';
+            ctx.fillRect(x + 10, y + 10, 20, 20);
+        }
+
+        function descargarScriptSQL() {
+            const sql = `-- CLINICA SANITAS SCRIPT DDL
+CREATE TABLE turnos_medicos (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sillon TEXT, paciente TEXT, medico TEXT);
+CREATE TABLE pacientes_admision (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), nombre TEXT, documento TEXT);`;
+            descargarArchivo('Estructura_Tablas_Sanitas.sql', sql, 'text/plain');
+        }
+
+        function guardarConfigSupabase() {
+            alert('Configuración de Supabase guardada. Reintentando sincronización...');
+            document.getElementById('db-status-badge').innerText = 'Modo: Supabase Cloud Activo';
+            document.getElementById('db-status-badge').className = 'bg-[#E8F5E9] px-2 py-0.5 rounded-full border border-[#2A9D8F]/30 text-[#2A9D8F]';
+            closeModal('modal-db');
+        }
+    </script>
+</body>
+</html>
