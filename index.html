@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spaservis Odonto Colombia | Dashboard Optimizado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+:root {
+  --bg-cream: #f4f2eb;
+  --panel-bg: #fdfdfd;
+  --panel-border: #e8e2d2;
+  --panel-shadow: 0 2px 6px rgba(100,85,40,0.06);
+  --yellow-light: #fcf8e3;
+  --yellow-soft: #fbf0b9;
+  --yellow-accent: #f3d165;
+  --amber-gold: #d49e29;
+  --amber-dark: #8a6715;
+  --text-main: #22252a;
+  --text-muted: #626871;
+  --good: #2e7d32;
+  --good-bg: #e8f5e9;
+  --danger: #c62828;
+  --danger-bg: #ffebee;
+  --warning: #f57f17;
+  --radius: 8px;
+  --radius-sm: 5px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; }
+html, body { width: 100%; height: 100vh; overflow: hidden; background: var(--bg-cream); color: var(--text-main); font-size: 11px; line-height: 1.25; }
+
+.app-container { display: flex; flex-direction: column; height: 100vh; padding: 6px; gap: 6px; }
+
+header { display: flex; justify-content: space-between; align-items: center; background: var(--panel-bg); border: 1px solid var(--panel-border); padding: 4px 10px; border-radius: var(--radius); height: 38px; flex-shrink: 0; box-shadow: var(--panel-shadow); }
+.brand { display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 12px; color: var(--amber-dark); }
+.brand-badge { background: var(--yellow-soft); border: 1px solid var(--amber-gold); padding: 2px 6px; border-radius: 4px; font-size: 8px; letter-spacing: 0.5px; }
+.header-actions { display: flex; align-items: center; gap: 4px; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 3px; background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: var(--radius-sm); padding: 3px 8px; font-size: 10px; font-weight: 600; color: var(--text-main); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.btn:hover { background: var(--yellow-light); border-color: var(--amber-gold); color: var(--amber-dark); }
+.btn.primary { background: var(--yellow-soft); border-color: var(--amber-gold); color: var(--amber-dark); font-weight: 700; }
+.btn.success { background: var(--good-bg); border-color: var(--good); color: var(--good); }
+.btn.danger { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+.btn.sm { padding: 2px 5px; font-size: 9px; }
+
+main.dashboard-grid { display: grid; grid-template-columns: 310px 1fr 310px; gap: 6px; flex: 1; min-height: 0; }
+
+.mobile-indicators { display: none; justify-content: center; gap: 6px; padding: 2px 0; flex-shrink: 0; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #dcd6c5; cursor: pointer; transition: background 0.2s; }
+.dot.active { background: var(--amber-gold); width: 20px; border-radius: 4px; }
+
+@media (max-width: 768px) {
+  .mobile-indicators { display: flex; }
+  .app-container { padding: 4px; gap: 4px; height: 100vh; overflow: hidden; }
+  main.dashboard-grid {
+    display: flex !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+    scroll-behavior: smooth;
+    gap: 0 !important;
+    flex-wrap: nowrap !important;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+  }
+  main.dashboard-grid > .card {
+    min-width: 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    scroll-snap-align: start !important;
+    height: 100% !important;
+    box-sizing: border-box;
+  }
+}
+
+.card { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: var(--radius); padding: 8px; display: flex; flex-direction: column; box-shadow: var(--panel-shadow); min-height: 0; overflow: hidden; position: relative; }
+.card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--panel-border); padding-bottom: 5px; margin-bottom: 6px; flex-shrink: 0; }
+
+/* Títulos de segundo nivel más grandes y destacados */
+.card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--amber-dark); display: flex; align-items: center; gap: 5px; }
+
+.card-body-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 4px; padding-right: 2px; }
+.card-body-scroll::-webkit-scrollbar { width: 3px; }
+.card-body-scroll::-webkit-scrollbar-thumb { background: #d0c8b4; border-radius: 3px; }
+
+.form-group { margin-bottom: 4px; }
+.form-label { display: block; font-size: 9px; font-weight: 700; color: var(--text-muted); margin-bottom: 2px; text-transform: uppercase; }
+.input, select, textarea { width: 100%; background: #ffffff; border: 1px solid #dcd6c5; border-radius: var(--radius-sm); padding: 3px 6px; font-size: 10px; color: var(--text-main); outline: none; }
+.input:focus, select:focus, textarea:focus { border-color: var(--amber-gold); background: var(--yellow-light); }
+.input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+
+.micro-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+.micro-table th { position: sticky; top: 0; background: var(--yellow-light); color: var(--amber-dark); font-weight: 700; text-align: left; padding: 4px; border-bottom: 1px solid var(--panel-border); font-size: 9px; text-transform: uppercase; z-index: 2; }
+.micro-table td { padding: 4px; border-bottom: 1px solid #f0ebe0; vertical-align: middle; }
+.micro-table tr:hover { background: #faf7ee; }
+
+.odontogram-box { background: var(--yellow-light); border: 1px solid var(--panel-border); border-radius: var(--radius-sm); padding: 5px; margin-bottom: 6px; text-align: center; }
+.odontogram-row { display: flex; justify-content: center; gap: 2px; margin-bottom: 2px; }
+.tooth-btn { width: 18px; height: 22px; border: 1px solid #c8beaa; border-radius: 3px; background: #ffffff; font-size: 8px; font-weight: 700; color: #444; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+.tooth-btn:hover { border-color: var(--amber-gold); background: var(--yellow-soft); }
+.tooth-btn.active { background: var(--amber-gold); color: #fff; border-color: var(--amber-dark); box-shadow: 0 0 4px rgba(212,158,41,0.5); }
+
+.badge { display: inline-flex; align-items: center; gap: 2px; padding: 1px 5px; border-radius: 3px; font-size: 8px; font-weight: 700; text-transform: uppercase; }
+.badge-gold { background: var(--yellow-soft); color: var(--amber-dark); border: 1px solid var(--amber-gold); }
+.badge-gray { background: #ece8dd; color: #555; }
+.badge-good { background: var(--good-bg); color: var(--good); border: 1px solid #a5d6a7; }
+
+.shift-bullet { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+.status-active { background-color: var(--good); box-shadow: 0 0 4px var(--good); }
+.status-upcoming { background-color: var(--warning); box-shadow: 0 0 4px var(--warning); }
+.status-delayed { background-color: var(--danger); box-shadow: 0 0 4px var(--danger); }
+
+/* Viñeta de Archivos Adjuntos con Botón Flotante */
+.upload-bullet-box { background: var(--yellow-light); border: 1px dashed var(--amber-gold); border-radius: var(--radius-sm); padding: 6px; margin-top: 6px; position: relative; }
+.floating-upload-btn { position: absolute; top: 6px; right: 6px; background: var(--amber-gold); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.15); transition: background 0.2s; }
+.floating-upload-btn:hover { background: var(--amber-dark); }
+.file-preview-list { margin-top: 4px; max-height: 90px; overflow-y: auto; font-size: 9.5px; }
+
+.tab-container { display: flex; gap: 2px; border-bottom: 1px solid var(--panel-border); margin-bottom: 6px; flex-shrink: 0; }
+.tab-btn { background: none; border: none; padding: 3px 8px; font-size: 10px; font-weight: 700; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; }
+.tab-btn.active { color: var(--amber-dark); border-bottom-color: var(--amber-gold); background: var(--yellow-light); border-radius: 4px 4px 0 0; }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(30,25,15,0.45); backdrop-filter: blur(2px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 10px; }
+.modal-overlay.active { display: flex; }
+.modal-card { background: var(--panel-bg); border: 1px solid var(--amber-gold); border-radius: var(--radius); width: 100%; max-width: 850px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.15); overflow: hidden; }
+.modal-header { padding: 8px 12px; background: var(--yellow-light); border-bottom: 1px solid var(--panel-border); display: flex; justify-content: space-between; align-items: center; }
+
+footer.status-bar { height: 22px; background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: var(--radius-sm); padding: 0 8px; display: flex; justify-content: space-between; align-items: center; font-size: 9px; color: var(--text-muted); flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <header>
+    <div class="brand">
+      <span>🩺 SPASERVIS ODONTO</span>
+      <span class="brand-badge">COLOMBIA · CALIDAD DATOS</span>
+    </div>
+    <div style="font-size: 9px; color: var(--text-muted);">
+      <span id="syncStatus">⬡ Supabase Live</span> | <span id="currentClock">00:00:00</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn primary sm" onclick="openModal('dbModal')">⚙️ Base Datos</button>
+      <button class="btn sm" onclick="openModal('sqlModal')">📜 SQL</button>
+      <button class="btn sm" onclick="openModal('qrModal')">📱 QR</button>
+    </div>
+  </header>
+
+  <div class="mobile-indicators" id="mobileIndicators">
+    <div class="dot active" onclick="scrollToScreen(0)"></div>
+    <div class="dot" onclick="scrollToScreen(1)"></div>
+    <div class="dot" onclick="scrollToScreen(2)"></div>
+  </div>
+
+  <main class="dashboard-grid" id="dashboardGrid">
+    
+    <!-- PANTALLA 1: Paciente, Admisión y Turnos -->
+    <section class="card" id="screen1">
+      <div class="card-header">
+        <span class="card-title">✦ Paciente & Turnos en Ruta</span>
+        <span class="badge badge-gold" id="patientBadge">Nuevo</span>
+      </div>
+
+      <div class="card-body-scroll">
+        <div class="form-group">
+          <label class="form-label">Buscar / Cargar Paciente</label>
+          <select id="selectPatient" onchange="loadSelectedPatient()" class="input">
+            <option value="">-- Crear Nuevo Paciente --</option>
+          </select>
+        </div>
+
+        <div class="input-row">
+          <div class="form-group">
+            <label class="form-label">Doc. Identidad *</label>
+            <input type="text" id="pDoc" class="input" placeholder="10203040">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tipo Doc.</label>
+            <select id="pTypeDoc" class="input">
+              <option>CC</option><option>TI</option><option>CE</option><option>PA</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="input-row">
+          <div class="form-group">
+            <label class="form-label">Nombres *</label>
+            <input type="text" id="pNames" class="input" placeholder="María">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Apellidos *</label>
+            <input type="text" id="pApell" class="input" placeholder="Gómez">
+          </div>
+        </div>
+
+        <div class="input-row">
+          <div class="form-group">
+            <label class="form-label">EPS / Entidad</label>
+            <input type="text" id="pEps" class="input" placeholder="Particular">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Régimen</label>
+            <select id="pUserType" class="input">
+              <option>Contributivo</option><option>Subsidiado</option><option>Particular</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 2px;">
+          <label style="font-size: 8px; font-weight: 600; color: var(--amber-dark); display: flex; align-items: center; gap: 3px;">
+            <input type="checkbox" id="pHabeasData" checked> Ley 1581/2012: Hábeas Data
+          </label>
+        </div>
+
+        <button class="btn primary sm" onclick="savePatient()" style="width: 100%; margin-bottom: 4px;">💾 Guardar Admisión</button>
+
+        <!-- Gestión de Turnos del Personal Médico en Ruta -->
+        <div style="border-top: 1px dashed var(--amber-gold); margin-top: 6px; padding-top: 6px;">
+          <div class="card-title" style="font-size: 11px; margin-bottom: 4px;">🚑 Turnos del Personal en Ruta</div>
+          
+          <div class="form-group">
+            <label class="form-label">Profesional Médico / Asistencial *</label>
+            <input type="text" id="mDoctor" class="input" placeholder="Dr. Juan Pérez">
+          </div>
+          <div class="input-row">
+            <div class="form-group">
+              <label class="form-label">WhatsApp Profesional *</label>
+              <input type="text" id="mPhone" class="input" placeholder="3001118739">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hora del Turno</label>
+              <input type="time" id="mTime" class="input">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Actividad en Jornada / Ruta</label>
+            <input type="text" id="mActivity" class="input" placeholder="Visita Domiciliaria / Brigada EPS">
+          </div>
+
+          <button class="btn success sm" onclick="saveMedicalShift()" style="width: 100%; margin-top: 2px;">📲 Asignar Turno y Activar Alarma WhatsApp</button>
+        </div>
+
+        <div style="margin-top: 6px; border: 1px solid var(--panel-border); border-radius: var(--radius-sm); max-height: 120px; overflow-y: auto;">
+          <table class="micro-table">
+            <thead>
+              <tr>
+                <th>Estado</th>
+                <th>Profesional</th>
+                <th>Hora</th>
+                <th>Actividad</th>
+                <th>WhatsApp</th>
+              </tr>
+            </thead>
+            <tbody id="shiftsTableBody">
+              <tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding: 6px;">Sin turnos en ruta registrados</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card-header" style="margin-top: 6px;">
+          <span class="card-title">◈ Pieza Dental (FDI)</span>
+          <span class="badge badge-gray" id="selectedToothLabel">Ninguna</span>
+        </div>
+
+        <div class="odontogram-box">
+          <div style="font-size: 8px; font-weight: 700; color: var(--text-muted); margin-bottom: 2px;">SUP. (18-28)</div>
+          <div class="odontogram-row" id="teethUp"></div>
+          <div style="font-size: 8px; font-weight: 700; color: var(--text-muted); margin-top: 2px; margin-bottom: 2px;">INF. (48-38)</div>
+          <div class="odontogram-row" id="teethDown"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANTALLA 2: Servicios CUPS, Facturación y Viñeta de Archivos Adjuntos con Botón Flotante -->
+    <section class="card" id="screen2">
+      <div class="card-header">
+        <span class="card-title">➲ Servicios CUPS & Facturación</span>
+        <span class="badge badge-gold">Res. 3100</span>
+      </div>
+
+      <div class="card-body-scroll">
+        <div class="input-row" style="grid-template-columns: 2fr 1fr 1fr; align-items: end;">
+          <div class="form-group">
+            <label class="form-label">Procedimiento CUPS</label>
+            <select id="selectCups" class="input"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cant.</label>
+            <input type="number" id="cupsQty" class="input" value="1" min="1">
+          </div>
+          <div class="form-group">
+            <button class="btn primary" onclick="addToCart()" style="width:100%; height: 23px;">＋ Agregar</button>
+          </div>
+        </div>
+
+        <div class="card-title" style="margin: 4px 0 2px; font-size: 11px;">📋 Detalle del Presupuesto:</div>
+        <div style="border: 1px solid var(--panel-border); border-radius: var(--radius-sm); max-height: 120px; overflow-y: auto;">
+          <table class="micro-table">
+            <thead>
+              <tr>
+                <th>CUPS</th>
+                <th>Descripción</th>
+                <th>Pieza</th>
+                <th>Cant.</th>
+                <th>Subtotal</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="cartTableBody">
+              <tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding: 8px;">Sin procedimientos</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="background: var(--yellow-light); border: 1px solid var(--panel-border); border-radius: var(--radius-sm); padding: 5px; margin-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 9px; color: var(--text-muted);">Copago:</div>
+              <strong id="copayText" style="font-size: 10px; color: var(--amber-dark);">$0 COP</strong>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 9px; color: var(--text-muted);">TOTAL FACTURA:</div>
+              <strong id="totalCartText" style="font-size: 13px; color: var(--amber-dark); font-family: 'JetBrains Mono', monospace;">$0 COP</strong>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 4px; margin-top: 4px;">
+          <button class="btn success" onclick="finalizeSale()" style="flex: 1;">⚡ Procesar Venta & RIPS</button>
+          <button class="btn danger sm" onclick="clearCart()">Limpiar</button>
+        </div>
+
+        <!-- Viñeta Central con Botón Flotante para Carga y Visualización de Archivos / Fotos -->
+        <div class="upload-bullet-box">
+          <div style="font-weight: 700; font-size: 10px; color: var(--amber-dark); margin-bottom: 2px;">📁 Adjuntos & Soportes Médicos</div>
+          <div style="font-size: 8.5px; color: var(--text-muted);">Carga imágenes, textos o documentos clínicos para validación.</div>
+          <input type="file" id="fileInput" style="display:none;" multiple onchange="handleFileUpload(event)">
+          <button class="floating-upload-btn" onclick="document.getElementById('fileInput').click()" title="Cargar archivo">+</button>
+          <div class="file-preview-list" id="filePreviewList">
+            <span style="color: var(--text-muted); font-style: italic;">Ningún archivo cargado.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANTALLA 3: RIPS & Normativa -->
+    <section class="card" id="screen3">
+      <div class="card-header">
+        <span class="card-title">📄 RIPS & Estado Médico</span>
+        <span class="badge badge-good">Res. 2275</span>
+      </div>
+
+      <div class="card-body-scroll">
+        <div class="form-group">
+          <label class="form-label">Finalidad de la Consulta</label>
+          <select id="ripsFinalidad" class="input">
+            <option value="10">10 - Diagnóstico / Prevención</option>
+            <option value="01">01 - Atención Parto</option>
+            <option value="05">05 - Alteración Desarrollo</option>
+          </select>
+        </div>
+
+        <div class="input-row">
+          <div class="form-group">
+            <label class="form-label">Causa Externa</label>
+            <select id="ripsCausa" class="input">
+              <option value="13">13 - Enfermedad Gral</option>
+              <option value="15">15 - Accidente Trabajo</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">CIE-10 Principal</label>
+            <input type="text" id="ripsCie10" class="input" value="K021" placeholder="Ej. K021">
+          </div>
+        </div>
+
+        <div class="card-header" style="margin-top: 4px;">
+          <span class="card-title">📜 Historial de Ventas</span>
+          <button class="btn sm" onclick="exportRipsJson()">JSON RIPS</button>
+        </div>
+
+        <div style="border: 1px solid var(--panel-border); border-radius: var(--radius-sm); max-height: 140px; overflow-y: auto;">
+          <table class="micro-table">
+            <thead>
+              <tr>
+                <th>ID Venta</th>
+                <th>Paciente</th>
+                <th>Total</th>
+                <th>RIPS</th>
+              </tr>
+            </thead>
+            <tbody id="salesHistoryTable">
+              <tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding: 8px;">Sin registros</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-top: 4px; font-size: 8px; color: var(--text-muted); background: var(--yellow-light); padding: 4px; border-radius: 4px; border: 1px solid #ebdcb2;">
+          • Ley 2015/2020: HC Interoperable.<br>
+          • Facturación validada para DIAN.
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="status-bar">
+    <div>✦ Spaservis Odonto | Calidad de Datos Salud Colombia</div>
+    <div>Supabase: <strong style="color: var(--amber-dark);">Active</strong></div>
+  </footer>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="dbModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <strong style="font-size: 11px; color: var(--amber-dark);">⚙️ Administrador Unificado de Base de Datos</strong>
+      <button class="btn danger sm" onclick="closeModal('dbModal')">✕</button>
+    </div>
+    <div style="padding: 8px; flex: 1; display: flex; flex-direction: column; min-height: 0;">
+      <div class="tab-container">
+        <button class="tab-btn active" onclick="switchDbTab('tabPatients', this)">Pacientes</button>
+        <button class="tab-btn" onclick="switchDbTab('tabShifts', this)">Turnos Ruta</button>
+        <button class="tab-btn" onclick="switchDbTab('tabCups', this)">CUPS</button>
+        <button class="tab-btn" onclick="switchDbTab('tabSales', this)">Ventas</button>
+      </div>
+
+      <div id="tabPatients" class="db-tab-content card-body-scroll" style="flex:1;">
+        <table class="micro-table">
+          <thead><tr><th>Documento</th><th>Nombre</th><th>EPS</th><th>Régimen</th></tr></thead>
+          <tbody id="dbPatientsBody"></tbody>
+        </table>
+      </div>
+
+      <div id="tabShifts" class="db-tab-content card-body-scroll" style="flex:1; display:none;">
+        <table class="micro-table">
+          <thead><tr><th>Profesional</th><th>Teléfono</th><th>Hora Turno</th><th>Actividad</th></tr></thead>
+          <tbody id="dbShiftsBody"></tbody>
+        </table>
+      </div>
+
+      <div id="tabCups" class="db-tab-content card-body-scroll" style="flex:1; display:none;">
+        <table class="micro-table">
+          <thead><tr><th>CUPS</th><th>Procedimiento</th><th>Categoría</th><th>Tarifa</th></tr></thead>
+          <tbody id="dbCupsBody"></tbody>
+        </table>
+      </div>
+
+      <div id="tabSales" class="db-tab-content card-body-scroll" style="flex:1; display:none;">
+        <table class="micro-table">
+          <thead><tr><th>ID</th><th>Fecha</th><th>Paciente</th><th>Total</th></tr></thead>
+          <tbody id="dbSalesBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="sqlModal">
+  <div class="modal-card" style="max-width: 550px;">
+    <div class="modal-header">
+      <strong style="font-size: 11px; color: var(--amber-dark);">📜 Script SQL Supabase</strong>
+      <button class="btn danger sm" onclick="closeModal('sqlModal')">✕</button>
+    </div>
+    <div style="padding: 8px;">
+      <textarea id="sqlArea" readonly style="width:100%; height: 220px; font-family: 'JetBrains Mono', monospace; font-size: 9px; background: #faf8f2; padding: 6px; border: 1px solid var(--panel-border);"></textarea>
+      <button class="btn primary sm" onclick="copySql()" style="margin-top: 6px; width: 100%;">📋 Copiar Script SQL</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="qrModal">
+  <div class="modal-card" style="max-width: 280px;">
+    <div class="modal-header">
+      <strong style="font-size: 11px; color: var(--amber-dark);">📱 QR Cotización</strong>
+      <button class="btn danger sm" onclick="closeModal('qrModal')">✕</button>
+    </div>
+    <div style="padding: 12px; text-align: center;">
+      <div id="qrBox" style="display: flex; justify-content: center; margin-bottom: 6px;"></div>
+      <div style="font-size: 8px; color: var(--text-muted);">Escanea para validar cotización.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const SUPABASE_URL = "https://ewepuftyygkhqfoqxufh.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_u1ueefVFlcFwNBgdHvCoMQ_gLRhV7KN";
+let sbClient = null;
+
+const initialCups = [
+  { id: "c1", codigo_cups: "890201", nombre_servicio: "Consulta Primera Vez Odontología", categoria: "Diagnóstico", tarifa_base: 60000 },
+  { id: "c2", codigo_cups: "992501", nombre_servicio: "Detartraje Subgingival / Profilaxis", categoria: "Prevención", tarifa_base: 110000 },
+  { id: "c3", codigo_cups: "230101", nombre_servicio: "Obturación Resina Fotocurada", categoria: "Operatoria", tarifa_base: 95000 },
+  { id: "c4", codigo_cups: "232100", nombre_servicio: "Endodoncia Unirradicular", categoria: "Endodoncia", tarifa_base: 280000 },
+  { id: "c5", codigo_cups: "237101", nombre_servicio: "Exodoncia Simple Diente Permanente", categoria: "Cirugía", tarifa_base: 85000 },
+  { id: "c6", codigo_cups: "997101", nombre_servicio: "Blanqueamiento Dental Estético", categoria: "Estética", tarifa_base: 220000 }
+];
+
+let patients = JSON.parse(localStorage.getItem("sp_patients")) || [];
+let cupsCatalog = JSON.parse(localStorage.getItem("sp_cups")) || initialCups;
+let sales = JSON.parse(localStorage.getItem("sp_sales")) || [];
+let shifts = JSON.parse(localStorage.getItem("sp_shifts")) || [];
+let uploadedFiles = [];
+let cart = [];
+let selectedTooth = null;
+
+setInterval(() => {
+  const d = new Date();
+  document.getElementById("currentClock").textContent = d.toLocaleTimeString();
+}, 1000);
+
+const grid = document.getElementById("dashboardGrid");
+const dots = document.querySelectorAll(".mobile-indicators .dot");
+
+grid.addEventListener("scroll", () => {
+  if (window.innerWidth <= 768) {
+    const index = Math.round(grid.scrollLeft / grid.clientWidth);
+    dots.forEach((dot, i) => {
+      dot.classList.toggle("active", i === index);
+    });
+  }
+});
+
+function scrollToScreen(index) {
+  const screens = [
+    document.getElementById("screen1"),
+    document.getElementById("screen2"),
+    document.getElementById("screen3")
+  ];
+  screens[index].scrollIntoView({ behavior: 'smooth', inline: 'start' });
+}
+
+function initSupabase() {
+  try {
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      document.getElementById("syncStatus").textContent = "⬡ Supabase Live";
+    }
+  } catch(e) {
+    console.warn("Modo Local Activo");
+  }
+}
+
+// Manejo de carga de archivos en la viñeta central
+function handleFileUpload(event) {
+  const files = event.target.files;
+  for (let i = 0; i < files.length; i++) {
+    uploadedFiles.push({
+      name: files[i].name,
+      size: (files[i].size / 1024).toFixed(1) + ' KB',
+      type: files[i].type || 'Desconocido'
+    });
+  }
+  renderUploadedFiles();
+}
+
+function renderUploadedFiles() {
+  const listContainer = document.getElementById("filePreviewList");
+  if (uploadedFiles.length === 0) {
+    listContainer.innerHTML = '<span style="color: var(--text-muted); font-style: italic;">Ningún archivo cargado.</span>';
+    return;
+  }
+  listContainer.innerHTML = uploadedFiles.map((f, idx) => `
+    <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:2px 4px; margin-bottom:2px; border-radius:3px; border:1px solid var(--panel-border);">
+      <span>📄 <strong>${f.name}</strong> (${f.size})</span>
+      <button class="btn danger sm" onclick="removeFile(${idx})" style="padding:1px 3px; font-size:7px;">✕</button>
+    </div>
+  `).join("");
+}
+
+function removeFile(idx) {
+  uploadedFiles.splice(idx, 1);
+  renderUploadedFiles();
+}
+
+function saveMedicalShift() {
+  const doctor = document.getElementById("mDoctor").value.trim();
+  const phone = document.getElementById("mPhone").value.trim();
+  const time = document.getElementById("mTime").value;
+  const activity = document.getElementById("mActivity").value.trim();
+
+  if (!doctor || !phone || !time || !activity) {
+    return alert("Por favor complete todos los campos del turno en ruta.");
+  }
+
+  const shift = {
+    id: "shift_" + Date.now(),
+    doctor,
+    phone,
+    time,
+    activity
+  };
+
+  shifts.push(shift);
+  localStorage.setItem("sp_shifts", JSON.stringify(shifts));
+  
+  if (sbClient) {
+    sbClient.from("spaservis_medical_shifts").upsert(shift).then();
+  }
+
+  renderShifts();
+  
+  const patientName = document.getElementById("pNames").value || "Paciente General";
+  const msg = `Hola Dr(a). ${doctor}, tiene programada la actividad '${activity}' a las ${time}. Paciente asignado: ${patientName}. Sistema Spaservis Colombia.`;
+  const waUrl = `https://api.whatsapp.com/send?phone=57${phone}&text=${encodeURIComponent(msg)}`;
+  
+  window.open(waUrl, '_blank');
+  alert("Turno registrado correctamente y enlace de WhatsApp generado.");
+}
+
+function renderShifts() {
+  const tbody = document.getElementById("shiftsTableBody");
+  if (shifts.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding: 6px;">Sin turnos en ruta registrados</td></tr>';
+    return;
+  }
+
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  tbody.innerHTML = shifts.map(s => {
+    const [h, m] = s.time.split(':').map(Number);
+    const shiftMinutes = h * 60 + m;
+    const diff = shiftMinutes - currentMinutes;
+
+    let statusClass = "status-active";
+    let statusText = "En curso / Activo";
+
+    if (diff > 30) {
+      statusClass = "status-upcoming";
+      statusText = "Próximo (>30m)";
+    } else if (diff < -15) {
+      statusClass = "status-delayed";
+      statusText = "Demorado";
+    }
+
+    return `<tr>
+      <td><span class="shift-bullet ${statusClass}" title="${statusText}"></span></td>
+      <td><strong>${s.doctor}</strong></td>
+      <td>${s.time}</td>
+      <td>${s.activity}</td>
+      <td><a href="https://api.whatsapp.com/send?phone=57${s.phone}&text=${encodeURIComponent('Alarma de turno Spaservis: ' + s.activity)}" target="_blank">📲 Alarma WA</a></td>
+    </tr>`;
+  }).join("");
+}
+
+function renderOdontogram() {
+  const up = document.getElementById("teethUp");
+  const down = document.getElementById("teethDown");
+  up.innerHTML = ""; down.innerHTML = "";
+
+  const teethUpper = [18,17,16,15,14,13,12,11, 21,22,23,24,25,26,27,28];
+  const teethLower = [48,47,46,45,44,43,42,41, 31,32,33,34,35,36,37,38];
+
+  teethUpper.forEach(t => {
+    const b = document.createElement("button");
+    b.className = `tooth-btn ${selectedTooth === t ? 'active' : ''}`;
+    b.textContent = t;
+    b.onclick = () => selectTooth(t);
+    up.appendChild(b);
+  });
+
+  teethLower.forEach(t => {
+    const b = document.createElement("button");
+    b.className = `tooth-btn ${selectedTooth === t ? 'active' : ''}`;
+    b.textContent = t;
+    b.onclick = () => selectTooth(t);
+    down.appendChild(b);
+  });
+}
+
+function selectTooth(t) {
+  selectedTooth = selectedTooth === t ? null : t;
+  document.getElementById("selectedToothLabel").textContent = selectedTooth ? `Pieza ${selectedTooth}` : "Ninguna";
+  renderOdontogram();
+}
+
+function renderAll() {
+  const pSelect = document.getElementById("selectPatient");
+  pSelect.innerHTML = '<option value="">-- Crear Nuevo Paciente --</option>' +
+    patients.map(p => `<option value="${p.id}">${p.documento} - ${p.nombres} ${p.apellidos}</option>`).join("");
+
+  const cSelect = document.getElementById("selectCups");
+  cSelect.innerHTML = cupsCatalog.map(c => `<option value="${c.id}">[${c.codigo_cups}] ${c.nombre_servicio} ($${c.tarifa_base.toLocaleString()})</option>`).join("");
+
+  renderCart();
+  renderSalesHistory();
+  renderShifts();
+  renderDbTables();
+}
+
+function savePatient() {
+  const doc = document.getElementById("pDoc").value.trim();
+  const names = document.getElementById("pNames").value.trim();
+  const apell = document.getElementById("pApell").value.trim();
+
+  if (!doc || !names || !apell) return alert("Completa Documento, Nombres y Apellidos.");
+
+  const p = {
+    id: "p_" + Date.now(),
+    documento: doc,
+    tipo_documento: document.getElementById("pTypeDoc").value,
+    nombres: names,
+    apellidos: apell,
+    eps: document.getElementById("pEps").value || "Particular",
+    regimen: document.getElementById("pUserType").value,
+    habeas_data: document.getElementById("pHabeasData").checked
+  };
+
+  patients.push(p);
+  localStorage.setItem("sp_patients", JSON.stringify(patients));
+  if (sbClient) sbClient.from("spaservis_odonto_patients").upsert(p).then();
+
+  renderAll();
+  document.getElementById("selectPatient").value = p.id;
+  alert("Admisión guardada con éxito.");
+}
+
+function loadSelectedPatient() {
+  const id = document.getElementById("selectPatient").value;
+  const p = patients.find(x => x.id === id);
+  if (p) {
+    document.getElementById("pDoc").value = p.documento;
+    document.getElementById("pNames").value = p.nombres;
+    document.getElementById("pApell").value = p.apellidos;
+    document.getElementById("pEps").value = p.eps;
+    document.getElementById("pUserType").value = p.regimen;
+    document.getElementById("patientBadge").textContent = "Cargado";
+  } else {
+    document.getElementById("patientBadge").textContent = "Nuevo";
+  }
+}
+
+function addToCart() {
+  const cId = document.getElementById("selectCups").value;
+  const qty = parseInt(document.getElementById("cupsQty").value) || 1;
+  const item = cupsCatalog.find(c => c.id === cId);
+
+  if (!item) return;
+
+  cart.push({
+    id: "item_" + Date.now(),
+    cups: item.codigo_cups,
+    name: item.nombre_servicio,
+    tooth: selectedTooth || "General",
+    qty: qty,
+    price: item.tarifa_base,
+    subtotal: item.tarifa_base * qty
+  });
+
+  renderCart();
+}
+
+function renderCart() {
+  const tbody = document.getElementById("cartTableBody");
+  if (cart.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding: 8px;">Sin procedimientos</td></tr>';
+    document.getElementById("totalCartText").textContent = "$0 COP";
+    document.getElementById("copayText").textContent = "$0 COP";
+    return;
+  }
+
+  let total = 0;
+  tbody.innerHTML = cart.map((i, idx) => {
+    total += i.subtotal;
+    return `<tr>
+      <td><strong>${i.cups}</strong></td>
+      <td>${i.name}</td>
+      <td><span class="badge badge-gold">${i.tooth}</span></td>
+      <td>${i.qty}</td>
+      <td>$${i.subtotal.toLocaleString()}</td>
+      <td><button class="btn danger sm" onclick="removeCartItem(${idx})">✕</button></td>
+    </tr>`;
+  }).join("");
+
+  document.getElementById("totalCartText").textContent = `$${total.toLocaleString()} COP`;
+  const userType = document.getElementById("pUserType").value;
+  let copay = userType === "Subsidiado" ? 0 : Math.round(total * 0.117);
+  document.getElementById("copayText").textContent = `$${copay.toLocaleString()} COP`;
+}
+
+function removeCartItem(idx) {
+  cart.splice(idx, 1);
+  renderCart();
+}
+
+function clearCart() {
+  cart = [];
+  renderCart();
+}
+
+function finalizeSale() {
+  const pId = document.getElementById("selectPatient").value;
+  if (!pId) return alert("Selecciona o registra un paciente primero.");
+  if (cart.length === 0) return alert("Agrega al menos un procedimiento.");
+
+  const p = patients.find(x => x.id === pId);
+  const total = cart.reduce((a, b) => a + b.subtotal, 0);
+
+  const sale = {
+    id: "vta_" + Date.now(),
+    patient_id: p.id,
+    paciente_nombre: `${p.nombres} ${p.apellidos}`,
+    total: total,
+    fecha: new Date().toISOString().split("T")[0],
+    estado: "Completado"
+  };
+
+  sales.push(sale);
+  localStorage.setItem("sp_sales", JSON.stringify(sales));
+
+  if (sbClient) {
+    sbClient.from("spaservis_odonto_sales").upsert(sale).then();
+  }
+
+  generateQr(sale);
+  clearCart();
+  renderAll();
+  alert("Venta procesada con éxito.");
+}
+
+function renderSalesHistory() {
+  const tbody = document.getElementById("salesHistoryTable");
+  if (sales.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding: 8px;">Sin registros</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = sales.slice(-6).reverse().map(s => `<tr>
+    <td><strong>${s.id}</strong></td>
+    <td>${s.paciente_nombre}</td>
+    <td>$${s.total.toLocaleString()}</td>
+    <td><span class="badge badge-good">Res. 2275</span></td>
+  </tr>`).join("");
+}
+
+function exportRipsJson() {
+  if (sales.length === 0) return alert("No hay registros.");
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sales, null, 2));
+  const dlAnchor = document.createElement('a');
+  dlAnchor.setAttribute("href", dataStr);
+  dlAnchor.setAttribute("download", "RIPS_Spaservis.json");
+  document.body.appendChild(dlAnchor);
+  dlAnchor.click();
+  dlAnchor.remove();
+}
+
+function renderDbTables() {
+  document.getElementById("dbPatientsBody").innerHTML = patients.map(p => `<tr>
+    <td>${p.tipo_documento} ${p.documento}</td><td>${p.nombres} ${p.apellidos}</td><td>${p.eps}</td><td>${p.regimen}</td>
+  </tr>`).join("");
+
+  document.getElementById("dbShiftsBody").innerHTML = shifts.map(s => `<tr>
+    <td>${s.doctor}</td><td>${s.phone}</td><td>${s.time}</td><td>${s.activity}</td>
+  </tr>`).join("");
+
+  document.getElementById("dbCupsBody").innerHTML = cupsCatalog.map(c => `<tr>
+    <td><strong>${c.codigo_cups}</strong></td><td>${c.nombre_servicio}</td><td>${c.categoria}</td><td>$${c.tarifa_base.toLocaleString()}</td>
+  </tr>`).join("");
+
+  document.getElementById("dbSalesBody").innerHTML = sales.map(s => `<tr>
+    <td>${s.id}</td><td>${s.fecha}</td><td>${s.paciente_nombre}</td><td>$${s.total.toLocaleString()}</td>
+  </tr>`).join("");
+}
+
+function switchDbTab(tabId, btn) {
+  document.querySelectorAll(".db-tab-content").forEach(el => el.style.display = "none");
+  document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+  document.getElementById(tabId).style.display = "block";
+  btn.classList.add("active");
+}
+
+function openModal(id) { document.getElementById(id).classList.add("active"); }
+function closeModal(id) { document.getElementById(id).classList.remove("active"); }
+
+function generateQr(saleData) {
+  const box = document.getElementById("qrBox");
+  box.innerHTML = "";
+  new QRCode(box, {
+    text: `SPASERVIS-COTIZACION-${saleData.id}-${saleData.paciente_nombre}-$${saleData.total}`,
+    width: 90,
+    height: 90
+  });
+}
+
+document.getElementById("sqlArea").value = `-- ESTRUCTURA SQL SUPABASE RUTA MEDICA Y CALIDAD SALUD
+CREATE TABLE IF NOT EXISTS public.spaservis_medical_shifts (
+    id TEXT PRIMARY KEY,
+    doctor VARCHAR(150) NOT NULL,
+    phone VARCHAR(30) NOT NULL,
+    time TIME NOT NULL,
+    activity VARCHAR(250) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);`;
+
+function copySql() {
+  const textarea = document.getElementById("sqlArea");
+  textarea.select();
+  document.execCommand("copy");
+  alert("Script SQL copiado.");
+}
+
+window.onload = function() {
+  initSupabase();
+  renderOdontogram();
+  renderAll();
+  generateQr({ id: "DEMO", paciente_nombre: "General", total: 0 });
+};
+</script>
+</body>
+</html>
