@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spaservis Odonto Colombia | Dashboard Compacto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+:root {
+  --bg-cream: #f4f2eb;
+  --panel-bg: #fdfdfd;
+  --panel-border: #e8e2d2;
+  --panel-shadow: 0 2px 6px rgba(100,85,40,0.06);
+  --yellow-light: #fcf8e3;
+  --yellow-soft: #fbf0b9;
+  --yellow-accent: #f3d165;
+  --amber-gold: #d49e29;
+  --amber-dark: #8a6715;
+  --text-main: #22252a;
+  --text-muted: #626871;
+  --text-light: #8c939d;
+  --good: #2e7d32;
+  --good-bg: #e8f5e9;
+  --danger: #c62828;
+  --danger-bg: #ffebee;
+  --radius: 8px;
+  --radius-sm: 5px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; }
+html, body { width: 100%; height: 100vh; overflow: hidden; background: var(--bg-cream); color: var(--text-main); font-size: 11px; line-height: 1.25; }
+
+/* Dashboard Single-View Structure */
+.app-container { display: flex; flex-direction: column; height: 100vh; padding: 6px; gap: 6px; }
+
+/* Compact Header */
+header { display: flex; justify-content: space-between; align-items: center; background: var(--panel-bg); border: 1px solid var(--panel-border); padding: 4px 10px; border-radius: var(--radius); height: 38px; flex-shrink: 0; box-shadow: var(--panel-shadow); }
+.brand { display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 13px; color: var(--amber-dark); }
+.brand-badge { background: var(--yellow-soft); border: 1px solid var(--amber-gold); padding: 2px 6px; border-radius: 4px; font-size: 9px; letter-spacing: 0.5px; }
+.header-actions { display: flex; align-items: center; gap: 4px; }
+
+/* Buttons Micro-style */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 3px; background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: var(--radius-sm); padding: 3px 8px; font-size: 10px; font-weight: 600; color: var(--text-main); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.btn:hover { background: var(--yellow-light); border-color: var(--amber-gold); color: var(--amber-dark); }
+.btn.primary { background: var(--yellow-soft); border-color: var(--amber-gold); color: var(--amber-dark); font-weight: 700; }
+.btn.primary:hover { background: var(--yellow-accent); }
+.btn.success { background: var(--good-bg); border-color: var(--good); color: var(--good); }
+.btn.danger { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+.btn.sm { padding: 2px 5px; font-size: 9px; }
+
+/* Main Grid Layout (No-Scroll Viewport) */
+main.dashboard-grid { display: grid; grid-template-columns: 280px 1fr 310px; gap: 6px; flex: 1; min-height: 0; }
+@media (max-width: 1024px) { main.dashboard-grid { grid-template-columns: 240px 1fr 260px; } }
+
+/* Cards & Panels */
+.card { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: var(--radius); padding: 8px; display: flex; flex-direction: column; box-shadow: var(--panel-shadow); min-height: 0; overflow: hidden; }
+.card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--panel-border); padding-bottom: 4px; margin-bottom: 6px; flex-shrink: 0; }
+.card-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--amber-dark); display: flex; align-items: center; gap: 4px; }
+
+/* Compact Form Fields */
+.form-group { margin-bottom: 4px; }
+.form-label { display: block; font-size: 9px; font-weight: 700; color: var(--text-muted); margin-bottom: 2px; text-transform: uppercase; }
+.input, select, textarea { width: 100%; background: #ffffff; border: 1px solid #dcd6c5; border-radius: var(--radius-sm); padding: 3px 6px; font-size: 10px; color: var(--text-main); outline: none; transition: border-color 0.15s; }
+.input:focus, select:focus, textarea:focus { border-color: var(--amber-gold); background: var(--yellow-light); }
+.input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.input-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+
+/* Scrollable Container Areas */
+.scroll-area { overflow-y: auto; flex: 1; padding-right: 2px; min-height: 0; }
+.scroll-area::-webkit-scrollbar { width: 4px; height: 4px; }
+.scroll-area::-webkit-scrollbar-thumb { background: #d0c8b4; border-radius: 4px; }
+
+/* Compact Tables */
+.micro-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+.micro-table th { position: sticky; top: 0; background: var(--yellow-light); color: var(--amber-dark); font-weight: 700; text-align: left; padding: 4px; border-bottom: 1px solid var(--panel-border); font-size: 9px; text-transform: uppercase; z-index: 2; }
+.micro-table td { padding: 4px; border-bottom: 1px solid #f0ebe0; vertical-align: middle; }
+.micro-table tr:hover { background: #faf7ee; }
+
+/* Compact Odontogram FDI */
+.odontogram-box { background: var(--yellow-light); border: 1px solid var(--panel-border); border-radius: var(--radius-sm); padding: 5px; margin-bottom: 6px; text-align: center; }
+.odontogram-row { display: flex; justify-content: center; gap: 2px; margin-bottom: 2px; }
+.tooth-btn { width: 18px; height: 22px; border: 1px solid #c8beaa; border-radius: 3px; background: #ffffff; font-size: 8px; font-weight: 700; color: #444; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 0; transition: all 0.1s; }
+.tooth-btn:hover { border-color: var(--amber-gold); background: var(--yellow-soft); }
+.tooth-btn.active { background: var(--amber-gold); color: #fff; border-color: var(--amber-dark); box-shadow: 0 0 4px rgba(212,158,41,0.5); }
+
+/* Badges & Bullet Tags */
+.badge { display: inline-flex; align-items: center; gap: 2px; padding: 1px 5px; border-radius: 3px; font-size: 8px; font-weight: 700; text-transform: uppercase; }
+.badge-gold { background: var(--yellow-soft); color: var(--amber-dark); border: 1px solid var(--amber-gold); }
+.badge-gray { background: #ece8dd; color: #555; }
+.badge-good { background: var(--good-bg); color: var(--good); border: 1px solid #a5d6a7; }
+
+/* Tabs inside Panels */
+.tab-container { display: flex; gap: 2px; border-bottom: 1px solid var(--panel-border); margin-bottom: 6px; flex-shrink: 0; }
+.tab-btn { background: none; border: none; padding: 3px 8px; font-size: 10px; font-weight: 700; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; }
+.tab-btn.active { color: var(--amber-dark); border-bottom-color: var(--amber-gold); background: var(--yellow-light); border-radius: 4px 4px 0 0; }
+
+/* Modals */
+.modal-overlay { position: fixed; inset: 0; background: rgba(30,25,15,0.45); backdrop-filter: blur(2px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 10px; }
+.modal-overlay.active { display: flex; }
+.modal-card { background: var(--panel-bg); border: 1px solid var(--amber-gold); border-radius: var(--radius); width: 100%; max-width: 850px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.15); overflow: hidden; }
+.modal-header { padding: 8px 12px; background: var(--yellow-light); border-bottom: 1px solid var(--panel-border); display: flex; justify-content: space-between; align-items: center; }
+
+/* Compact Status Bar */
+footer.status-bar { height: 22px; background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: var(--radius-sm); padding: 0 8px; display: flex; justify-content: space-between; align-items: center; font-size: 9px; color: var(--text-muted); flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Header Bar -->
+  <header>
+    <div class="brand">
+      <span>🩺 SPASERVIS ODONTO</span>
+      <span class="brand-badge">COLOMBIA · RES. 2275 RIPS</span>
+    </div>
+    <div style="font-size: 9px; color: var(--text-muted);">
+      <span id="syncStatus">⬡ Supabase Conectado</span> | <span id="currentClock">00:00:00</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn primary sm" onclick="openModal('dbModal')">⚙️ Base de Datos</button>
+      <button class="btn sm" onclick="openModal('sqlModal')">📜 Script SQL</button>
+      <button class="btn sm" onclick="openModal('qrModal')">📱 QR Cotización</button>
+    </div>
+  </header>
+
+  <!-- Dashboard Main Grid (Fits into single screen) -->
+  <main class="dashboard-grid">
+    
+    <!-- LEFT PANEL: Admisión de Paciente & Odontograma -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-title">✦ 1. Paciente & Odontograma</span>
+        <span class="badge badge-gold" id="patientBadge">Nuevo</span>
+      </div>
+
+      <!-- Formulario Paciente Compacto -->
+      <div class="form-group">
+        <label class="form-label">Buscar / Cargar Paciente</label>
+        <select id="selectPatient" onchange="loadSelectedPatient()" class="input">
+          <option value="">-- Crear Nuevo Paciente --</option>
+        </select>
+      </div>
+
+      <div class="input-row">
+        <div class="form-group">
+          <label class="form-label">Doc. Identidad *</label>
+          <input type="text" id="pDoc" class="input" placeholder="10203040">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo Doc.</label>
+          <select id="pTypeDoc" class="input">
+            <option>CC</option><option>TI</option><option>CE</option><option>PA</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="form-group">
+          <label class="form-label">Nombres *</label>
+          <input type="text" id="pNames" class="input" placeholder="María">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Apellidos *</label>
+          <input type="text" id="pApell" class="input" placeholder="Gómez">
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="form-group">
+          <label class="form-label">EPS / Entidad</label>
+          <input type="text" id="pEps" class="input" placeholder="Sura / Particular">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Régimen</label>
+          <select id="pUserType" class="input">
+            <option>Contributivo</option><option>Subsidiado</option><option>Particular</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top: 2px;">
+        <label style="font-size: 8px; font-weight: 600; color: var(--amber-dark); display: flex; align-items: center; gap: 3px;">
+          <input type="checkbox" id="pHabeasData" checked> 
+          Ley 1581/2012: Acepta Tratamiento Datos & Consentimiento
+        </label>
+      </div>
+
+      <button class="btn primary sm" onclick="savePatient()" style="width: 100%; margin-bottom: 6px;">💾 Guardar / Seleccionar Paciente</button>
+
+      <!-- Mini Odontograma FDI Interactivo -->
+      <div class="card-header" style="margin-top: 4px;">
+        <span class="card-title">◈ Pieza Dental (FDI)</span>
+        <span class="badge badge-gray" id="selectedToothLabel">Ninguna</span>
+      </div>
+
+      <div class="odontogram-box">
+        <div style="font-size: 8px; font-weight: 700; color: var(--text-muted); margin-bottom: 2px;">CUADRANTES SUPERIORES (18-28)</div>
+        <div class="odontogram-row" id="teethUp"></div>
+        <div style="font-size: 8px; font-weight: 700; color: var(--text-muted); margin-top: 4px; margin-bottom: 2px;">CUADRANTES INFERIORES (48-38)</div>
+        <div class="odontogram-row" id="teethDown"></div>
+      </div>
+    </section>
+
+    <!-- CENTER PANEL: Catálogo CUPS & Cotizador de Ventas -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-title">➲ 2. Servicios Odontológicos CUPS & Cotizador</span>
+        <span class="badge badge-gold">Res. 3100 Habilitación</span>
+      </div>
+
+      <!-- Selección de Procedimiento -->
+      <div class="input-row" style="grid-template-columns: 2fr 1fr 1fr; align-items: end;">
+        <div class="form-group">
+          <label class="form-label">Procedimiento CUPS</label>
+          <select id="selectCups" class="input"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cantidad</label>
+          <input type="number" id="cupsQty" class="input" value="1" min="1">
+        </div>
+        <div class="form-group">
+          <button class="btn primary" onclick="addToCart()" style="width:100%; height: 23px;">＋ Agregar</button>
+        </div>
+      </div>
+
+      <!-- Tabla del Carrito de Cotización -->
+      <div class="card-title" style="margin: 6px 0 4px; font-size: 10px;">📋 Detalle del Presupuesto Actual:</div>
+      <div class="scroll-area" style="border: 1px solid var(--panel-border); border-radius: var(--radius-sm);">
+        <table class="micro-table">
+          <thead>
+            <tr>
+              <th>CUPS</th>
+              <th>Descripción</th>
+              <th>Pieza</th>
+              <th>Cant.</th>
+              <th>Subtotal</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="cartTableBody">
+            <tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding: 12px;">Sin procedimientos agregados</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Cálculo de Totales y Cotización -->
+      <div style="background: var(--yellow-light); border: 1px solid var(--panel-border); border-radius: var(--radius-sm); padding: 6px; margin-top: 6px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 9px; color: var(--text-muted);">Copago / Cuota Moderadora:</div>
+            <strong id="copayText" style="font-size: 10px; color: var(--amber-dark);">$0 COP</strong>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 9px; color: var(--text-muted);">TOTAL ESTIMADO:</div>
+            <strong id="totalCartText" style="font-size: 14px; color: var(--amber-dark); font-family: 'JetBrains Mono', monospace;">$0 COP</strong>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 4px; margin-top: 6px;">
+        <button class="btn success" onclick="finalizeSale()" style="flex: 1;">⚡ Procesar Venta & Generar RIPS</button>
+        <button class="btn danger sm" onclick="clearCart()">Limpiar</button>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: RIPS Res. 2275 & Historial Reciente -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-title">📄 3. RIPS & Normativa Salud</span>
+        <span class="badge badge-good">Res. 2275/2023</span>
+      </div>
+
+      <!-- Datos RIPS Ajustables -->
+      <div class="form-group">
+        <label class="form-label">Finalidad de la Consulta</label>
+        <select id="ripsFinalidad" class="input">
+          <option value="10">10 - Diagnóstico / Prevención</option>
+          <option value="01">01 - Atención Parto</option>
+          <option value="05">05 - Alteración Desarrollo</option>
+        </select>
+      </div>
+
+      <div class="input-row">
+        <div class="form-group">
+          <label class="form-label">Causa Externa</label>
+          <select id="ripsCausa" class="input">
+            <option value="13">13 - Enfermedad Gral</option>
+            <option value="15">15 - Accidente Trabajo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">CIE-10 Principal</label>
+          <input type="text" id="ripsCie10" class="input" value="K021" placeholder="Ej. K021 Caries">
+        </div>
+      </div>
+
+      <div class="card-header" style="margin-top: 6px;">
+        <span class="card-title">📜 Historial de Ventas & RIPS</span>
+        <button class="btn sm" onclick="exportRipsJson()">JSON RIPS</button>
+      </div>
+
+      <div class="scroll-area" style="border: 1px solid var(--panel-border); border-radius: var(--radius-sm);">
+        <table class="micro-table">
+          <thead>
+            <tr>
+              <th>ID Venta</th>
+              <th>Paciente</th>
+              <th>Total</th>
+              <th>RIPS</th>
+            </tr>
+          </thead>
+          <tbody id="salesHistoryTable">
+            <tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding: 12px;">Sin registros registrados</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 6px; font-size: 8px; color: var(--text-muted); background: var(--yellow-light); padding: 4px; border-radius: 4px; border: 1px solid #ebdcb2;">
+        • Ley 2015/2020: Historia Clínica Interoperable.<br>
+        • Facturación electrónica ajustada para validación DIAN.
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer Bar -->
+  <footer class="status-bar">
+    <div>✦ Spaservis Odonto Colombia v3.5 | Dashboard de Alta Densidad</div>
+    <div>Sincronización en la Nube: <strong style="color: var(--amber-dark);">Supabase Active</strong></div>
+  </footer>
+</div>
+
+<!-- MODAL: Administrador de Base de Datos -->
+<div class="modal-overlay" id="dbModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <strong style="font-size: 11px; color: var(--amber-dark);">⚙️ Administrador Unificado de Base de Datos (Supabase / Local)</strong>
+      <button class="btn danger sm" onclick="closeModal('dbModal')">✕ Cerrar</button>
+    </div>
+    <div style="padding: 8px; flex: 1; display: flex; flex-direction: column; min-height: 0;">
+      <div class="tab-container">
+        <button class="tab-btn active" onclick="switchDbTab('tabPatients', this)">Pacientes</button>
+        <button class="tab-btn" onclick="switchDbTab('tabCups', this)">Catálogo CUPS</button>
+        <button class="tab-btn" onclick="switchDbTab('tabSales', this)">Ventas Realizadas</button>
+        <button class="tab-btn" onclick="switchDbTab('tabRips', this)">Registros RIPS</button>
+      </div>
+
+      <div id="tabPatients" class="db-tab-content scroll-area" style="flex:1;">
+        <table class="micro-table">
+          <thead><tr><th>Documento</th><th>Nombre Completo</th><th>EPS</th><th>Régimen</th><th>Hábeas Data</th></tr></thead>
+          <tbody id="dbPatientsBody"></tbody>
+        </table>
+      </div>
+
+      <div id="tabCups" class="db-tab-content scroll-area" style="flex:1; display:none;">
+        <table class="micro-table">
+          <thead><tr><th>CUPS</th><th>Procedimiento</th><th>Categoría</th><th>Tarifa Base</th></tr></thead>
+          <tbody id="dbCupsBody"></tbody>
+        </table>
+      </div>
+
+      <div id="tabSales" class="db-tab-content scroll-area" style="flex:1; display:none;">
+        <table class="micro-table">
+          <thead><tr><th>ID</th><th>Fecha</th><th>Paciente</th><th>Total</th><th>Estado</th></tr></thead>
+          <tbody id="dbSalesBody"></tbody>
+        </table>
+      </div>
+
+      <div id="tabRips" class="db-tab-content scroll-area" style="flex:1; display:none;">
+        <table class="micro-table">
+          <thead><tr><th>ID Sale</th><th>Fecha</th><th>Diagnóstico CIE-10</th><th>Finalidad</th></tr></thead>
+          <tbody id="dbRipsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Visor Script SQL -->
+<div class="modal-overlay" id="sqlModal">
+  <div class="modal-card" style="max-width: 600px;">
+    <div class="modal-header">
+      <strong style="font-size: 11px; color: var(--amber-dark);">📜 Script SQL de Estructura para Supabase</strong>
+      <button class="btn danger sm" onclick="closeModal('sqlModal')">✕ Cerrar</button>
+    </div>
+    <div style="padding: 8px;">
+      <textarea id="sqlArea" readonly style="width:100%; height: 260px; font-family: 'JetBrains Mono', monospace; font-size: 9px; background: #faf8f2; padding: 6px; border: 1px solid var(--panel-border);"></textarea>
+      <button class="btn primary sm" onclick="copySql()" style="margin-top: 6px; width: 100%;">📋 Copiar Script SQL al Portapapeles</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Generador QR -->
+<div class="modal-overlay" id="qrModal">
+  <div class="modal-card" style="max-width: 320px;">
+    <div class="modal-header">
+      <strong style="font-size: 11px; color: var(--amber-dark);">📱 QR de la Cotización</strong>
+      <button class="btn danger sm" onclick="closeModal('qrModal')">✕ Cerrar</button>
+    </div>
+    <div style="padding: 12px; text-align: center;">
+      <div id="qrBox" style="display: flex; justify-content: center; margin-bottom: 8px;"></div>
+      <div style="font-size: 9px; color: var(--text-muted);">Escanea para verificar la cotización odontológica.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+// Credenciales Oficiales Supabase
+const SUPABASE_URL = "https://ewepuftyygkhqfoqxufh.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_u1ueefVFlcFwNBgdHvCoMQ_gLRhV7KN";
+let sbClient = null;
+
+// Catálogo CUPS Inicial Odontología Colombia
+const initialCups = [
+  { id: "c1", codigo_cups: "890201", nombre_servicio: "Consulta Primera Vez Odontología", categoria: "Diagnóstico", tarifa_base: 60000 },
+  { id: "c2", codigo_cups: "992501", nombre_servicio: "Detartraje Subgingival / Profilaxis", categoria: "Prevención", tarifa_base: 110000 },
+  { id: "c3", codigo_cups: "230101", nombre_servicio: "Obturación Resina Fotocurada", categoria: "Operatoria", tarifa_base: 95000 },
+  { id: "c4", codigo_cups: "232100", nombre_servicio: "Endodoncia Unirradicular", categoria: "Endodoncia", tarifa_base: 280000 },
+  { id: "c5", codigo_cups: "237101", nombre_servicio: "Exodoncia Simple Diente Permanente", categoria: "Cirugía", tarifa_base: 85000 },
+  { id: "c6", codigo_cups: "997101", nombre_servicio: "Blanqueamiento Dental Estético", categoria: "Estética", tarifa_base: 220000 }
+];
+
+// Estado de la Aplicación
+let patients = JSON.parse(localStorage.getItem("sp_patients")) || [];
+let cupsCatalog = JSON.parse(localStorage.getItem("sp_cups")) || initialCups;
+let sales = JSON.parse(localStorage.getItem("sp_sales")) || [];
+let ripsRecords = JSON.parse(localStorage.getItem("sp_rips")) || [];
+let cart = [];
+let selectedTooth = null;
+
+// Reloj en tiempo real
+setInterval(() => {
+  const d = new Date();
+  document.getElementById("currentClock").textContent = d.toLocaleTimeString();
+}, 1000);
+
+// Inicialización de Supabase
+function initSupabase() {
+  try {
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      document.getElementById("syncStatus").textContent = "⬡ Supabase Live Active";
+    }
+  } catch(e) {
+    console.warn("Modo Local Activo:", e);
+  }
+}
+
+// Renderizado del Odontograma FDI (18-28 y 48-38)
+function renderOdontogram() {
+  const up = document.getElementById("teethUp");
+  const down = document.getElementById("teethDown");
+  up.innerHTML = ""; down.innerHTML = "";
+
+  const teethUpper = [18,17,16,15,14,13,12,11, 21,22,23,24,25,26,27,28];
+  const teethLower = [48,47,46,45,44,43,42,41, 31,32,33,34,35,36,37,38];
+
+  teethUpper.forEach(t => {
+    const b = document.createElement("button");
+    b.className = `tooth-btn ${selectedTooth === t ? 'active' : ''}`;
+    b.textContent = t;
+    b.onclick = () => selectTooth(t);
+    up.appendChild(b);
+  });
+
+  teethLower.forEach(t => {
+    const b = document.createElement("button");
+    b.className = `tooth-btn ${selectedTooth === t ? 'active' : ''}`;
+    b.textContent = t;
+    b.onclick = () => selectTooth(t);
+    down.appendChild(b);
+  });
+}
+
+function selectTooth(t) {
+  selectedTooth = selectedTooth === t ? null : t;
+  document.getElementById("selectedToothLabel").textContent = selectedTooth ? `Pieza ${selectedTooth}` : "Ninguna";
+  renderOdontogram();
+}
+
+// Cargar Datos en UI
+function renderAll() {
+  // Cargar Select Pacientes
+  const pSelect = document.getElementById("selectPatient");
+  pSelect.innerHTML = '<option value="">-- Crear Nuevo Paciente --</option>' +
+    patients.map(p => `<option value="${p.id}">${p.documento} - ${p.nombres} ${p.apellidos}</option>`).join("");
+
+  // Cargar Select CUPS
+  const cSelect = document.getElementById("selectCups");
+  cSelect.innerHTML = cupsCatalog.map(c => `<option value="${c.id}">[${c.codigo_cups}] ${c.nombre_servicio} ($${c.tarifa_base.toLocaleString()})</option>`).join("");
+
+  renderCart();
+  renderSalesHistory();
+  renderDbTables();
+}
+
+// Gestión de Pacientes
+function savePatient() {
+  const doc = document.getElementById("pDoc").value.trim();
+  const names = document.getElementById("pNames").value.trim();
+  const apell = document.getElementById("pApell").value.trim();
+
+  if (!doc || !names || !apell) return alert("Completa Documento, Nombres y Apellidos.");
+
+  const p = {
+    id: "p_" + Date.now(),
+    documento: doc,
+    tipo_documento: document.getElementById("pTypeDoc").value,
+    nombres: names,
+    apellidos: apell,
+    eps: document.getElementById("pEps").value || "Particular",
+    regimen: document.getElementById("pUserType").value,
+    habeas_data: document.getElementById("pHabeasData").checked
+  };
+
+  patients.push(p);
+  localStorage.setItem("sp_patients", JSON.stringify(patients));
+  if (sbClient) sbClient.from("spaservis_odonto_patients").upsert(p).then();
+
+  renderAll();
+  document.getElementById("selectPatient").value = p.id;
+  alert("Paciente registrado exitosamente.");
+}
+
+function loadSelectedPatient() {
+  const id = document.getElementById("selectPatient").value;
+  const p = patients.find(x => x.id === id);
+  if (p) {
+    document.getElementById("pDoc").value = p.documento;
+    document.getElementById("pNames").value = p.nombres;
+    document.getElementById("pApell").value = p.apellidos;
+    document.getElementById("pEps").value = p.eps;
+    document.getElementById("pUserType").value = p.regimen;
+    document.getElementById("patientBadge").textContent = "Cargado";
+  } else {
+    document.getElementById("patientBadge").textContent = "Nuevo";
+  }
+}
+
+// Carrito / Cotización
+function addToCart() {
+  const cId = document.getElementById("selectCups").value;
+  const qty = parseInt(document.getElementById("cupsQty").value) || 1;
+  const item = cupsCatalog.find(c => c.id === cId);
+
+  if (!item) return;
+
+  cart.push({
+    id: "item_" + Date.now(),
+    cups: item.codigo_cups,
+    name: item.nombre_servicio,
+    tooth: selectedTooth || "General",
+    qty: qty,
+    price: item.tarifa_base,
+    subtotal: item.tarifa_base * qty
+  });
+
+  renderCart();
+}
+
+function renderCart() {
+  const tbody = document.getElementById("cartTableBody");
+  if (cart.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding: 12px;">Sin procedimientos agregados</td></tr>';
+    document.getElementById("totalCartText").textContent = "$0 COP";
+    document.getElementById("copayText").textContent = "$0 COP";
+    return;
+  }
+
+  let total = 0;
+  tbody.innerHTML = cart.map((i, idx) => {
+    total += i.subtotal;
+    return `<tr>
+      <td><strong>${i.cups}</strong></td>
+      <td>${i.name}</td>
+      <td><span class="badge badge-gold">${i.tooth}</span></td>
+      <td>${i.qty}</td>
+      <td>$${i.subtotal.toLocaleString()}</td>
+      <td><button class="btn danger sm" onclick="removeCartItem(${idx})">✕</button></td>
+    </tr>`;
+  }).join("");
+
+  document.getElementById("totalCartText").textContent = `$${total.toLocaleString()} COP`;
+  
+  // Cálculo aproximado de cuota moderadora / copago según norma colombiana
+  const userType = document.getElementById("pUserType").value;
+  let copay = userType === "Subsidiado" ? 0 : Math.round(total * 0.117);
+  document.getElementById("copayText").textContent = `$${copay.toLocaleString()} COP`;
+}
+
+function removeCartItem(idx) {
+  cart.splice(idx, 1);
+  renderCart();
+}
+
+function clearCart() {
+  cart = [];
+  renderCart();
+}
+
+// Finalizar Venta y RIPS
+function finalizeSale() {
+  const pId = document.getElementById("selectPatient").value;
+  if (!pId) return alert("Selecciona o registra un paciente primero.");
+  if (cart.length === 0) return alert("Agrega al menos un procedimiento.");
+
+  const p = patients.find(x => x.id === pId);
+  const total = cart.reduce((a, b) => a + b.subtotal, 0);
+
+  const sale = {
+    id: "vta_" + Date.now(),
+    patient_id: p.id,
+    paciente_nombre: `${p.nombres} ${p.apellidos}`,
+    total: total,
+    fecha: new Date().toISOString().split("T")[0],
+    estado: "Completado"
+  };
+
+  const rips = {
+    id: "rips_" + Date.now(),
+    sale_id: sale.id,
+    documento: p.documento,
+    finalidad: document.getElementById("ripsFinalidad").value,
+    causa: document.getElementById("ripsCausa").value,
+    cie10: document.getElementById("ripsCie10").value,
+    fecha: sale.fecha
+  };
+
+  sales.push(sale);
+  ripsRecords.push(rips);
+
+  localStorage.setItem("sp_sales", JSON.stringify(sales));
+  localStorage.setItem("sp_rips", JSON.stringify(ripsRecords));
+
+  if (sbClient) {
+    sbClient.from("spaservis_odonto_sales").upsert(sale).then();
+    sbClient.from("spaservis_odonto_rips").upsert(rips).then();
+  }
+
+  generateQr(sale);
+  clearCart();
+  renderAll();
+  alert("Venta registrada y archivo RIPS estructurado exitosamente.");
+}
+
+function renderSalesHistory() {
+  const tbody = document.getElementById("salesHistoryTable");
+  if (sales.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding: 12px;">Sin ventas registradas</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = sales.slice(-6).reverse().map(s => `<tr>
+    <td><strong>${s.id}</strong></td>
+    <td>${s.paciente_nombre}</td>
+    <td>$${s.total.toLocaleString()}</td>
+    <td><span class="badge badge-good">Res. 2275</span></td>
+  </tr>`).join("");
+}
+
+// Exportar RIPS en Formato JSON (Resolución 2275/2023)
+function exportRipsJson() {
+  if (ripsRecords.length === 0) return alert("No hay registros RIPS generados.");
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(ripsRecords, null, 2));
+  const dlAnchor = document.createElement('a');
+  dlAnchor.setAttribute("href", dataStr);
+  dlAnchor.setAttribute("download", "RIPS_Res2275_Spaservis.json");
+  document.body.appendChild(dlAnchor);
+  dlAnchor.click();
+  dlAnchor.remove();
+}
+
+// Administrador de Base de Datos
+function renderDbTables() {
+  document.getElementById("dbPatientsBody").innerHTML = patients.map(p => `<tr>
+    <td>${p.tipo_documento} ${p.documento}</td><td>${p.nombres} ${p.apellidos}</td><td>${p.eps}</td><td>${p.regimen}</td><td>${p.habeas_data ? "✓ Sí" : "✕ No"}</td>
+  </tr>`).join("");
+
+  document.getElementById("dbCupsBody").innerHTML = cupsCatalog.map(c => `<tr>
+    <td><strong>${c.codigo_cups}</strong></td><td>${c.nombre_servicio}</td><td>${c.categoria}</td><td>$${c.tarifa_base.toLocaleString()}</td>
+  </tr>`).join("");
+
+  document.getElementById("dbSalesBody").innerHTML = sales.map(s => `<tr>
+    <td>${s.id}</td><td>${s.fecha}</td><td>${s.paciente_nombre}</td><td>$${s.total.toLocaleString()}</td><td>${s.estado}</td>
+  </tr>`).join("");
+
+  document.getElementById("dbRipsBody").innerHTML = ripsRecords.map(r => `<tr>
+    <td>${r.sale_id}</td><td>${r.fecha}</td><td>${r.cie10}</td><td>${r.finalidad}</td>
+  </tr>`).join("");
+}
+
+function switchDbTab(tabId, btn) {
+  document.querySelectorAll(".db-tab-content").forEach(el => el.style.display = "none");
+  document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+  document.getElementById(tabId).style.display = "block";
+  btn.classList.add("active");
+}
+
+// Modal System
+function openModal(id) { document.getElementById(id).classList.add("active"); }
+function closeModal(id) { document.getElementById(id).classList.remove("active"); }
+
+// Generador de Código QR para Cotizaciones
+function generateQr(saleData) {
+  const box = document.getElementById("qrBox");
+  box.innerHTML = "";
+  new QRCode(box, {
+    text: `SPASERVIS-COTIZACION-${saleData.id}-${saleData.paciente_nombre}-$${saleData.total}`,
+    width: 110,
+    height: 110
+  });
+}
+
+// Script SQL Viewer text assignment
+document.getElementById("sqlArea").value = `-- ESTRUCTURA SQL SUPABASE SPASERVIS ODONTO
+CREATE TABLE IF NOT EXISTS public.spaservis_odonto_patients (
+    id TEXT PRIMARY KEY,
+    documento VARCHAR(50) UNIQUE NOT NULL,
+    tipo_documento VARCHAR(10) DEFAULT 'CC',
+    nombres VARCHAR(150) NOT NULL,
+    apellidos VARCHAR(150) NOT NULL,
+    eps VARCHAR(100),
+    regimen VARCHAR(30) DEFAULT 'Contributivo',
+    habeas_data BOOLEAN DEFAULT true
+);
+
+CREATE TABLE IF NOT EXISTS public.spaservis_odonto_sales (
+    id TEXT PRIMARY KEY,
+    patient_id TEXT,
+    paciente_nombre VARCHAR(250),
+    total NUMERIC(12,2),
+    fecha DATE,
+    estado VARCHAR(30)
+);
+
+CREATE TABLE IF NOT EXISTS public.spaservis_odonto_rips (
+    id TEXT PRIMARY KEY,
+    sale_id TEXT,
+    documento VARCHAR(50),
+    finalidad VARCHAR(10),
+    causa VARCHAR(10),
+    cie10 VARCHAR(10),
+    fecha DATE
+);`;
+
+function copySql() {
+  const textarea = document.getElementById("sqlArea");
+  textarea.select();
+  document.execCommand("copy");
+  alert("Script SQL copiado al portapapeles.");
+}
+
+// Ejecución inicial al cargar la página
+window.onload = function() {
+  initSupabase();
+  renderOdontogram();
+  renderAll();
+  generateQr({ id: "DEMO", paciente_nombre: "General", total: 0 });
+};
+</script>
+</body>
+</html>
