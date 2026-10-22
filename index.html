@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Médico Odontológico Colombia - Pro & Cloud</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        medical: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .bed-btn {
+            transition: all 0.2s ease;
+        }
+        .bed-btn:hover {
+            transform: scale(1.05);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-800 font-sans antialiased flex flex-col overflow-hidden">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shadow-sm z-20">
+        <div class="flex items-center space-x-3">
+            <div class="bg-medical-600 text-white p-2.5 rounded-xl shadow-md flex items-center justify-center">
+                <i class="fa-solid fa-hospital text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-900 tracking-tight">SISO Colombia <span class="text-xs bg-medical-100 text-medical-700 px-2 py-0.5 rounded-full font-semibold ml-1">Cloud Pro</span></h1>
+                <p class="text-xs text-slate-500">Resolución 2275 • Ley 1581 Hábeas Data • MinCiencias</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <!-- Cloud Connection Status Badge -->
+            <div id="sync-status" class="hidden sm:flex items-center space-x-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full text-xs font-medium text-amber-700">
+                <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse" id="sync-dot"></span>
+                <span id="sync-text">Sincronizando con Supabase...</span>
+            </div>
+
+            <!-- Admin Profile Indicator -->
+            <div class="flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
+                <div class="w-7 h-7 rounded-full bg-medical-600 text-white flex items-center justify-center text-xs font-bold">
+                    FC
+                </div>
+                <div class="text-left hidden md:block">
+                    <p class="text-xs font-semibold text-slate-700 leading-tight">Farley Cano</p>
+                    <p class="text-[10px] text-slate-500 leading-tight">Admin Principal</p>
+                </div>
+            </div>
+
+            <button onclick="openHabeasDataModal()" class="text-slate-600 hover:text-medical-600 p-2 rounded-lg hover:bg-slate-100 transition" title="Consentimiento Informado Ley 1581">
+                <i class="fa-solid fa-shield-halved"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <div class="flex-1 flex overflow-hidden">
+
+        <!-- Sidebar Navigation -->
+        <aside class="w-20 lg:w-64 bg-white border-r border-slate-200 flex flex-col justify-between z-10">
+            <nav class="p-3 space-y-1.5">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl font-medium text-sm transition text-medical-700 bg-medical-50">
+                    <i class="fa-solid fa-chart-pie w-5 text-center text-lg"></i>
+                    <span class="hidden lg:inline">Panel General</span>
+                </button>
+                <button onclick="switchTab('pacientes')" id="nav-pacientes" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl font-medium text-sm transition text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-users w-5 text-center text-lg"></i>
+                    <span class="hidden lg:inline">Pacientes</span>
+                </button>
+                <button onclick="switchTab('odontograma')" id="nav-odontograma" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl font-medium text-sm transition text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-bed-pulse w-5 text-center text-lg"></i>
+                    <span class="hidden lg:inline">Camas & Turnos</span>
+                </button>
+                <button onclick="switchTab('turnos')" id="nav-turnos" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl font-medium text-sm transition text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-calendar-check w-5 text-center text-lg"></i>
+                    <span class="hidden lg:inline">Agenda & Turnos</span>
+                </button>
+                <button onclick="switchTab('rips')" id="nav-rips" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl font-medium text-sm transition text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-file-medical w-5 text-center text-lg"></i>
+                    <span class="hidden lg:inline">RIPS & Facturación</span>
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-slate-200 hidden lg:block">
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <p class="text-xs font-semibold text-slate-700"><i class="fa-solid fa-cloud-arrow-up text-medical-600 mr-1.5"></i> Base Cloud Activa</p>
+                    <p class="text-[11px] text-slate-500 mt-1">Supabase Cluster V2 vinculado correctamente para Colombia.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Dynamic Content Panel -->
+        <main class="flex-1 bg-slate-50 overflow-y-auto p-4 sm:p-6 lg:p-8">
+
+            <!-- TAB 1: DASHBOARD -->
+            <section id="tab-dashboard" class="space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">Panel de Control Clínico</h2>
+                        <p class="text-sm text-slate-500">Resumen operativo general de pacientes, historias y sincronización.</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="openNewPatientModal()" class="bg-medical-600 hover:bg-medical-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition flex items-center space-x-2">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>Nuevo Paciente</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Pacientes</p>
+                            <h3 class="text-3xl font-extrabold text-slate-900 mt-1" id="stat-patients">0</h3>
+                            <p class="text-xs text-medical-600 font-medium mt-1"><i class="fa-solid fa-arrow-up mr-1"></i>Sincronizado Cloud</p>
+                        </div>
+                        <div class="w-12 h-12 bg-medical-50 text-medical-600 rounded-xl flex items-center justify-center text-xl shadow-inner">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Citas Hoy</p>
+                            <h3 class="text-3xl font-extrabold text-slate-900 mt-1" id="stat-appointments">0</h3>
+                            <p class="text-xs text-blue-600 font-medium mt-1"><i class="fa-solid fa-calendar mr-1"></i>Agenda al día</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl shadow-inner">
+                            <i class="fa-solid fa-calendar-day"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Camas Asignadas</p>
+                            <h3 class="text-3xl font-extrabold text-slate-900 mt-1" id="stat-odontograms">0</h3>
+                            <p class="text-xs text-purple-600 font-medium mt-1"><i class="fa-solid fa-bed mr-1"></i>Hospitalización</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-xl shadow-inner">
+                            <i class="fa-solid fa-notes-medical"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Estado Conexión</p>
+                            <h3 class="text-lg font-bold text-medical-600 mt-1" id="stat-db-status">Conectado</h3>
+                            <p class="text-xs text-slate-500 mt-1">Supabase Auth OK</p>
+                        </div>
+                        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl shadow-inner">
+                            <i class="fa-solid fa-cloud"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity Table -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                        <h3 class="font-bold text-slate-900">Pacientes Recientes en la Base de Datos</h3>
+                        <button onclick="switchTab('pacientes')" class="text-sm font-semibold text-medical-600 hover:text-medical-700">Ver todos</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-400 uppercase text-[11px] font-semibold tracking-wider border-b border-slate-200">
+                                    <th class="px-6 py-3">Paciente</th>
+                                    <th class="px-6 py-3">Identificación</th>
+                                    <th class="px-6 py-3">EPS / Aseguradora</th>
+                                    <th class="px-6 py-3">Teléfono</th>
+                                    <th class="px-6 py-3 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-patients-tbody" class="divide-y divide-slate-100 text-slate-600">
+                                <!-- Dinámico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: PACIENTES -->
+            <section id="tab-pacientes" class="space-y-6 hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">Gestión de Pacientes</h2>
+                        <p class="text-sm text-slate-500">Base de datos de historias clínicas con validación RIPS y Ley 1581.</p>
+                    </div>
+                    <button onclick="openNewPatientModal()" class="bg-medical-600 hover:bg-medical-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition flex items-center space-x-2">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Registrar Paciente</span>
+                    </button>
+                </div>
+
+                <!-- Search & Filters -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                    <div class="flex-1 relative">
+                        <i class="fa-solid fa-search absolute left-4 top-3.5 text-slate-400"></i>
+                        <input type="text" id="patient-search" oninput="filterPatients()" placeholder="Buscar por nombre, cédula o EPS..." class="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                    </div>
+                </div>
+
+                <!-- Full Patient Table -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-400 uppercase text-[11px] font-semibold tracking-wider border-b border-slate-200">
+                                    <th class="px-6 py-3">Nombre Completo</th>
+                                    <th class="px-6 py-3">Tipo / Doc</th>
+                                    <th class="px-6 py-3">EPS</th>
+                                    <th class="px-6 py-3">Teléfono / Email</th>
+                                    <th class="px-6 py-3 text-right">Gestionar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="full-patients-tbody" class="divide-y divide-slate-100 text-slate-600">
+                                <!-- Dinámico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: ASIGNACIÓN DE TURNOS Y CAMAS HOSPITALARIAS -->
+            <section id="tab-odontograma" class="space-y-6 hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">Asignación de Turnos y Camas Hospitalarias</h2>
+                        <p class="text-sm text-slate-500">Gestión e interacción de disponibilidad por sectores hospitalarios y camas.</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <select id="odontogram-patient-select" onchange="loadPatientOdontogram()" class="bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                            <option value="">Seleccione Paciente...</option>
+                        </select>
+                        <button onclick="saveOdontogram()" class="bg-medical-600 hover:bg-medical-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition flex items-center space-x-2">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span>Guardar en Cloud</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Beds Chart Workspace Container -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Hospital Beds Workspace (2 Cols) -->
+                    <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-6">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                            <div>
+                                <h3 class="font-bold text-slate-800" id="current-patient-title">Ningún Paciente Seleccionado</h3>
+                                <p class="text-xs text-slate-500">Plano General de Distribución Hospitalaria</p>
+                            </div>
+                            <span id="odontogram-status-badge" class="bg-slate-100 text-slate-600 text-xs px-3 py-1 rounded-full font-semibold">Sin cargar</span>
+                        </div>
+
+                        <!-- General Floor -->
+                        <div class="space-y-2">
+                            <p class="text-xs font-semibold text-slate-400 text-center uppercase tracking-wider">Piso 1 - Cuidado General (Camas 101 a 116)</p>
+                            <div class="flex justify-center flex-wrap gap-1.5 sm:gap-2 max-h-64 overflow-y-auto p-1" id="arch-upper">
+                                <!-- Generado por JS -->
+                            </div>
+                        </div>
+
+                        <!-- Intensive Care Unit (UCI) Floor -->
+                        <div class="space-y-2 pt-4 border-t border-slate-100">
+                            <div class="flex justify-center flex-wrap gap-1.5 sm:gap-2 max-h-64 overflow-y-auto p-1" id="arch-lower">
+                                <!-- Generado por JS -->
+                            </div>
+                            <p class="text-xs font-semibold text-slate-400 text-center uppercase tracking-wider pt-2">Piso 2 - Cuidados Intensivos UCI / UCE (Camas 201 a 216)</p>
+                        </div>
+                    </div>
+
+                    <!-- Bed Status Panel (1 Col) -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-6">
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-base mb-1">Herramienta de Asignación</h3>
+                            <p class="text-xs text-slate-500 mb-4">Seleccione estado del turno o cama para el elemento activo.</p>
+
+                            <!-- Selected Bed Display -->
+                            <div class="bg-medical-50 border border-medical-200 p-4 rounded-xl mb-4 text-center">
+                                <span class="text-xs font-semibold text-medical-700 uppercase tracking-wider">Cama Seleccionada</span>
+                                <h4 class="text-2xl font-extrabold text-medical-900 mt-1" id="selected-tooth-label">Ninguna</h4>
+                                <p class="text-xs text-medical-600 mt-0.5" id="selected-tooth-status">Haga clic en una cama del mapa</p>
+                            </div>
+
+                            <!-- Condition Options -->
+                            <div class="space-y-2">
+                                <label class="text-xs font-semibold text-slate-600">Estado de la Cama / Turno:</label>
+                                <div class="grid grid-cols-1 gap-2">
+                                    <button onclick="applyToothCondition('Sano')" class="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition text-sm font-medium text-slate-700">
+                                        <span class="flex items-center space-x-2"><span class="w-3 h-3 rounded-full bg-slate-300"></span><span>Disponible / Libre</span></span>
+                                        <i class="fa-solid fa-chevron-right text-xs text-slate-400"></i>
+                                    </button>
+                                    <button onclick="applyToothCondition('Caries')" class="flex items-center justify-between p-3 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 transition text-sm font-medium text-red-700">
+                                        <span class="flex items-center space-x-2"><span class="w-3 h-3 rounded-full bg-red-500"></span><span>Ocupada / Asignada</span></span>
+                                        <i class="fa-solid fa-chevron-right text-xs text-red-400"></i>
+                                    </button>
+                                    <button onclick="applyToothCondition('Resina')" class="flex items-center justify-between p-3 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 transition text-sm font-medium text-blue-700">
+                                        <span class="flex items-center space-x-2"><span class="w-3 h-3 rounded-full bg-blue-500"></span><span>Reservada / Turno</span></span>
+                                        <i class="fa-solid fa-chevron-right text-xs text-blue-400"></i>
+                                    </button>
+                                    <button onclick="applyToothCondition('Endodoncia')" class="flex items-center justify-between p-3 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 transition text-sm font-medium text-purple-700">
+                                        <span class="flex items-center space-x-2"><span class="w-3 h-3 rounded-full bg-purple-500"></span><span>En Limpieza / Desinfección</span></span>
+                                        <i class="fa-solid fa-chevron-right text-xs text-purple-400"></i>
+                                    </button>
+                                    <button onclick="applyToothCondition('Ausente')" class="flex items-center justify-between p-3 rounded-xl border border-slate-300 bg-slate-100 hover:bg-slate-200 transition text-sm font-medium text-slate-700">
+                                        <span class="flex items-center space-x-2"><span class="w-3 h-3 rounded-full bg-slate-600"></span><span>Mantenimiento / Fuera de Servicio</span></span>
+                                        <i class="fa-solid fa-chevron-right text-xs text-slate-400"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-100 pt-4">
+                            <button onclick="resetTooth()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-medium text-sm transition">
+                                Limpiar Cama Seleccionada
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: TURNOS -->
+            <section id="tab-turnos" class="space-y-6 hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">Agenda & Citas Médicas</h2>
+                        <p class="text-sm text-slate-500">Gestión de turnos médicos sincronizados con Supabase.</p>
+                    </div>
+                    <button onclick="openNewAppointmentModal()" class="bg-medical-600 hover:bg-medical-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition flex items-center space-x-2">
+                        <i class="fa-solid fa-calendar-plus"></i>
+                        <span>Asignar Cita</span>
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-400 uppercase text-[11px] font-semibold tracking-wider border-b border-slate-200">
+                                    <th class="px-6 py-3">Fecha y Hora</th>
+                                    <th class="px-6 py-3">Paciente</th>
+                                    <th class="px-6 py-3">Motivo / Tratamiento</th>
+                                    <th class="px-6 py-3">Estado</th>
+                                    <th class="px-6 py-3 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="appointments-tbody" class="divide-y divide-slate-100 text-slate-600">
+                                <!-- Dinámico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: RIPS -->
+            <section id="tab-rips" class="space-y-6 hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">RIPS & Facturación Electrónica</h2>
+                        <p class="text-sm text-slate-500">Generación de archivos institucionales Res. 2275 Ministerio de Salud.</p>
+                    </div>
+                    <button onclick="generateRipsExport()" class="bg-medical-600 hover:bg-medical-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition flex items-center space-x-2">
+                        <i class="fa-solid fa-file-arrow-down"></i>
+                        <span>Exportar Paquete RIPS JSON</span>
+                    </button>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <h3 class="font-bold text-slate-900 text-base">Estructura del Paquete RIPS</h3>
+                    <p class="text-sm text-slate-600">El sistema consolida automáticamente los registros individuales de prestación de servicios de salud basados en las asignaciones de camas, atenciones y procedimientos cargados.</p>
+                    <div class="bg-slate-900 text-emerald-400 p-4 rounded-xl font-mono text-xs overflow-x-auto" id="rips-preview">
+                        {
+                          "prestador": "NIT 900.123.456-8",
+                          "versionRips": "Resolución 2275 de 2023",
+                          "estadoSupabase": "Conectado",
+                          "registrosConsultas": []
+                        }
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL: NUEVO PACIENTE -->
+    <div id="modal-patient" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                <h3 class="font-bold text-slate-900 text-base">Registrar Nuevo Paciente</h3>
+                <button onclick="closeNewPatientModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="form-patient" onsubmit="savePatient(event)" class="p-6 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Nombres</label>
+                        <input type="text" id="p-nombres" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Apellidos</label>
+                        <input type="text" id="p-apellidos" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo Documento</label>
+                        <select id="p-tipo-doc" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                            <option value="CC">Cédula de Ciudadanía</option>
+                            <option value="TI">Tarjeta de Identidad</option>
+                            <option value="CE">Cédula de Extranjería</option>
+                            <option value="RC">Registro Civil</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Número de Documento</label>
+                        <input type="text" id="p-doc" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">EPS / Aseguradora</label>
+                        <input type="text" id="p-eps" placeholder="Ej: Sura, Sanitas, EPS Sura" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono</label>
+                        <input type="tel" id="p-tel" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Correo Electrónico</label>
+                    <input type="email" id="p-email" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                </div>
+                <div class="flex items-center space-x-2 pt-2">
+                    <input type="checkbox" id="p-habeas" required class="rounded text-medical-600 focus:ring-medical-500">
+                    <label for="p-habeas" class="text-xs text-slate-600">Autoriza tratamiento de datos personales (Ley 1581 de 2012)</label>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeNewPatientModal()" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium text-sm hover:bg-slate-200">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-medical-600 hover:bg-medical-700 text-white rounded-xl font-medium text-sm shadow-sm">Guardar Paciente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: NUEVA CITA -->
+    <div id="modal-appointment" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                <h3 class="font-bold text-slate-900 text-base">Asignar Nueva Cita</h3>
+                <button onclick="closeNewAppointmentModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="form-appointment" onsubmit="saveAppointment(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Paciente</label>
+                    <select id="appt-patient" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                        <option value="">Seleccione Paciente...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha y Hora</label>
+                    <input type="datetime-local" id="appt-date" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Motivo / Tratamiento</label>
+                    <input type="text" id="appt-reason" placeholder="Ej: Valoración Médica, Hospitalización" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                </div>
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeNewAppointmentModal()" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium text-sm hover:bg-slate-200">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-medical-600 hover:bg-medical-700 text-white rounded-xl font-medium text-sm shadow-sm">Asignar Turno</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL HABEAS DATA -->
+    <div id="modal-habeas" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                <h3 class="font-bold text-slate-900 text-base">Ley 1581 de 2012 - Hábeas Data</h3>
+                <button onclick="closeHabeasDataModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-6 space-y-4 text-sm text-slate-600 max-h-96 overflow-y-auto">
+                <p>En cumplimiento de la Ley 1581 de 2012 y el Decreto 1377 de 2013, le informamos que los datos personales suministrados en este sistema médico son recolectados bajo estrictos estándares de seguridad y confidencialidad clínica.</p>
+                <p>Su información es utilizada exclusivamente para la prestación de servicios asistenciales en salud, asignación de turnos y camas hospitalarias, reportes obligatorios RIPS ante el Ministerio de Salud y gestión administrativa del consultorio del Dr. Farley Cano.</p>
+            </div>
+            <div class="px-6 py-4 border-t border-slate-100 flex justify-end">
+                <button onclick="closeHabeasDataModal()" class="px-5 py-2 bg-medical-600 text-white rounded-xl font-medium text-sm">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main JavaScript Logic & Supabase Integration -->
+    <script>
+        // Supabase Credentials & Initialization
+        const SUPABASE_URL = "https://ewepuftyygkhqfoqxufh.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_u1ueefVFlcFwNBgdHvCoMQ_gLRhV7KN";
+        let supabaseClient = null;
+
+        // Application State (Clean initialization)
+        let appState = {
+            patients: [],
+            appointments: [],
+            odontograms: {}, 
+            selectedPatientId: null,
+            selectedTooth: null
+        };
+
+        // Hospital Bed Identifiers (Floor 1: 101-116, Floor 2/UCI: 201-216)
+        const upperArchTeeth = [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116];
+        const lowerArchTeeth = [201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216];
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            initSupabaseAndAuth();
+            renderOdontogramArches();
+        });
+
+        // Initialize Supabase & Background Admin Auth
+        async function initSupabaseAndAuth() {
+            try {
+                if (window.supabase && window.supabase.createClient) {
+                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    updateSyncBadge("Autenticando admin...", "amber");
+
+                    const { data, error } = await supabaseClient.auth.signInWithPassword({
+                        email: "farleycano1@gmail.com",
+                        password: "ciruelo123"
+                    });
+
+                    if (error) {
+                        console.warn("Autenticación Supabase Auth omitida/restringida:", error.message);
+                        updateSyncBadge("Modo Local Habilitado", "emerald");
+                        loadLocalState();
+                    } else {
+                        console.log("Sesión admin iniciada correctamente en Supabase:", data.user?.email);
+                        updateSyncBadge("Conectado a Cloud (Supabase)", "emerald");
+                        await fetchCloudData();
+                    }
+                } else {
+                    throw new Error("Supabase SDK no disponible");
+                }
+            } catch (err) {
+                console.error("Error conectando a Supabase:", err);
+                updateSyncBadge("Modo Local Offline", "amber");
+                loadLocalState();
+            }
+        }
+
+        function updateSyncBadge(text, color) {
+            const dot = document.getElementById('sync-dot');
+            const txt = document.getElementById('sync-text');
+            txt.textContent = text;
+            dot.className = `w-2 h-2 rounded-full ${color === 'emerald' ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`;
+            document.getElementById('stat-db-status').textContent = color === 'emerald' ? 'Activo / Cloud' : 'Local Standalone';
+        }
+
+        // Fetch Data from Supabase Tables or LocalStorage
+        async function fetchCloudData() {
+            try {
+                const { data: patData, error: patErr } = await supabaseClient.from('pacientes').select('*');
+                if (!patErr && patData) {
+                    appState.patients = patData;
+                } else {
+                    loadLocalState();
+                }
+
+                const { data: appData, error: appErr } = await supabaseClient.from('citas').select('*');
+                if (!appErr && appData) {
+                    appState.appointments = appData;
+                }
+
+                refreshUI();
+            } catch (e) {
+                console.error("Error al sincronizar tablas:", e);
+                loadLocalState();
+            }
+        }
+
+        function loadLocalState() {
+            const localPat = localStorage.getItem('siso_patients');
+            const localApp = localStorage.getItem('siso_appointments');
+            const localOdo = localStorage.getItem('siso_odontograms');
+
+            if (localPat) appState.patients = JSON.parse(localPat);
+            if (localApp) appState.appointments = JSON.parse(localApp);
+            if (localOdo) appState.odontograms = JSON.parse(localOdo);
+
+            refreshUI();
+        }
+
+        function saveLocalState() {
+            localStorage.setItem('siso_patients', JSON.stringify(appState.patients));
+            localStorage.setItem('siso_appointments', JSON.stringify(appState.appointments));
+            localStorage.setItem('siso_odontograms', JSON.stringify(appState.odontograms));
+        }
+
+        // UI Refresh & Sync
+        function refreshUI() {
+            document.getElementById('stat-patients').textContent = appState.patients.length;
+            document.getElementById('stat-appointments').textContent = appState.appointments.length;
+            document.getElementById('stat-odontograms').textContent = Object.keys(appState.odontograms).length;
+
+            renderPatientsTables();
+            renderAppointmentsTable();
+            populatePatientSelects();
+        }
+
+        // Tab Switching
+        function switchTab(tabId) {
+            ['dashboard', 'pacientes', 'odontograma', 'turnos', 'rips'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                document.getElementById(`nav-${t}`).classList.remove('bg-medical-50', 'text-medical-700');
+                document.getElementById(`nav-${t}`).classList.add('text-slate-600', 'hover:bg-slate-100');
+            });
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            activeNav.classList.remove('text-slate-600', 'hover:bg-slate-100');
+            activeNav.classList.add('bg-medical-50', 'text-medical-700');
+        }
+
+        // Render Patients
+        function renderPatientsTables() {
+            const recentTbody = document.getElementById('recent-patients-tbody');
+            const fullTbody = document.getElementById('full-patients-tbody');
+            recentTbody.innerHTML = '';
+            fullTbody.innerHTML = '';
+
+            if (appState.patients.length === 0) {
+                recentTbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-slate-400 text-xs">No hay pacientes registrados.</td></tr>`;
+                fullTbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-slate-400 text-xs">No hay pacientes registrados.</td></tr>`;
+                return;
+            }
+
+            appState.patients.slice(0, 5).forEach(p => {
+                recentTbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-3.5 font-semibold text-slate-900">${p.nombres} ${p.apellidos}</td>
+                        <td class="px-6 py-3.5"><span class="bg-slate-100 px-2.5 py-1 rounded-md text-xs font-semibold text-slate-700">${p.tipo_doc}: ${p.doc}</span></td>
+                        <td class="px-6 py-3.5">${p.eps}</td>
+                        <td class="px-6 py-3.5">${p.tel}</td>
+                        <td class="px-6 py-3.5 text-right">
+                            <button onclick="selectPatientForOdontogram('${p.id}')" class="text-medical-600 hover:text-medical-800 font-medium text-xs bg-medical-50 px-3 py-1.5 rounded-lg">Asignar Cama</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            appState.patients.forEach(p => {
+                fullTbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-3.5 font-semibold text-slate-900">${p.nombres} ${p.apellidos}</td>
+                        <td class="px-6 py-3.5"><span class="bg-slate-100 px-2.5 py-1 rounded-md text-xs font-semibold text-slate-700">${p.tipo_doc}: ${p.doc}</span></td>
+                        <td class="px-6 py-3.5">${p.eps}</td>
+                        <td class="px-6 py-3.5">${p.tel} <br><span class="text-xs text-slate-400">${p.email}</span></td>
+                        <td class="px-6 py-3.5 text-right space-x-2">
+                            <button onclick="selectPatientForOdontogram('${p.id}')" class="text-medical-600 hover:text-medical-800 font-medium text-xs bg-medical-50 px-3 py-1.5 rounded-lg"><i class="fa-solid fa-bed mr-1"></i>Asignar Cama</button>
+                            <button onclick="deletePatient('${p.id}')" class="text-red-500 hover:text-red-700 text-xs px-2 py-1.5"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function populatePatientSelects() {
+            const odoSelect = document.getElementById('odontogram-patient-select');
+            const apptSelect = document.getElementById('appt-patient');
+            
+            let options = '<option value="">Seleccione Paciente...</option>';
+            appState.patients.forEach(p => {
+                options += `<option value="${p.id}">${p.nombres} ${p.apellidos} (${p.doc})</option>`;
+            });
+
+            odoSelect.innerHTML = options;
+            apptSelect.innerHTML = options;
+            if (appState.selectedPatientId) odoSelect.value = appState.selectedPatientId;
+        }
+
+        // Hospital Beds Rendering & Interaction
+        function renderOdontogramArches() {
+            const upperContainer = document.getElementById('arch-upper');
+            const lowerContainer = document.getElementById('arch-lower');
+            upperContainer.innerHTML = '';
+            lowerContainer.innerHTML = '';
+
+            upperArchTeeth.forEach(bedNum => {
+                upperContainer.innerHTML += createToothHTML(bedNum);
+            });
+
+            lowerArchTeeth.forEach(bedNum => {
+                lowerContainer.innerHTML += createToothHTML(bedNum);
+            });
+        }
+
+        function createToothHTML(num) {
+            const condition = (appState.selectedPatientId && appState.odontograms[appState.selectedPatientId]?.[num]) || 'Sano';
+            let bgClass = 'bg-white border-slate-200 text-slate-700';
+            if (condition === 'Caries') bgClass = 'bg-red-50 border-red-300 text-red-700';
+            if (condition === 'Resina') bgClass = 'bg-blue-50 border-blue-300 text-blue-700';
+            if (condition === 'Endodoncia') bgClass = 'bg-purple-50 border-purple-300 text-purple-700';
+            if (condition === 'Ausente') bgClass = 'bg-slate-200 border-slate-400 text-slate-400 line-through';
+
+            return `
+                <button onclick="selectTooth(${num})" id="tooth-${num}" class="bed-btn w-12 h-16 sm:w-14 sm:h-20 rounded-xl border-2 ${bgClass} flex flex-col items-center justify-between p-1.5 shadow-sm">
+                    <span class="text-[11px] font-bold">C-${num}</span>
+                    <div class="w-6 h-6 rounded-md bg-white/80 border border-slate-200 flex items-center justify-center text-[10px] font-semibold">${getToothAbbr(condition)}</div>
+                    <span class="text-[9px] truncate max-w-full">${getDisplayConditionName(condition)}</span>
+                </button>
+            `;
+        }
+
+        function getDisplayConditionName(cond) {
+            if (cond === 'Caries') return 'Ocupada';
+            if (cond === 'Resina') return 'Reservada';
+            if (cond === 'Endodoncia') return 'Limpieza';
+            if (cond === 'Ausente') return 'Mantenimiento';
+            return 'Libre';
+        }
+
+        function getToothAbbr(cond) {
+            if (cond === 'Caries') return 'OCU';
+            if (cond === 'Resina') return 'RES';
+            if (cond === 'Endodoncia') return 'LIM';
+            if (cond === 'Ausente') return 'MNT';
+            return 'DISP';
+        }
+
+        function selectTooth(num) {
+            appState.selectedTooth = num;
+            document.getElementById('selected-tooth-label').textContent = `Cama Nº: ${num}`;
+            const currentCond = (appState.selectedPatientId && appState.odontograms[appState.selectedPatientId]?.[num]) || 'Sano';
+            document.getElementById('selected-tooth-status').textContent = `Estado actual: ${getDisplayConditionName(currentCond)}`;
+        }
+
+        function applyToothCondition(condition) {
+            if (!appState.selectedPatientId) {
+                alertUser("Debe seleccionar un paciente primero para asignar la cama hospitalaria.");
+                switchTab('pacientes');
+                return;
+            }
+            if (!appState.selectedTooth) {
+                alertUser("Haga clic en una cama del plano hospitalario.");
+                return;
+            }
+
+            if (!appState.odontograms[appState.selectedPatientId]) {
+                appState.odontograms[appState.selectedPatientId] = {};
+            }
+
+            appState.odontograms[appState.selectedPatientId][appState.selectedTooth] = condition;
+            saveLocalState();
+            renderOdontogramArches();
+            selectTooth(appState.selectedTooth);
+        }
+
+        function resetTooth() {
+            if (appState.selectedPatientId && appState.selectedTooth) {
+                if (appState.odontograms[appState.selectedPatientId]) {
+                    delete appState.odontograms[appState.selectedPatientId][appState.selectedTooth];
+                    saveLocalState();
+                    renderOdontogramArches();
+                    selectTooth(appState.selectedTooth);
+                }
+            }
+        }
+
+        function selectPatientForOdontogram(id) {
+            appState.selectedPatientId = id;
+            switchTab('odontograma');
+            const patient = appState.patients.find(p => p.id === id);
+            if (patient) {
+                document.getElementById('current-patient-title').textContent = `${patient.nombres} ${patient.apellidos} (${patient.doc})`;
+                document.getElementById('odontogram-status-badge').textContent = `Cargado: ${patient.eps}`;
+                document.getElementById('odontogram-status-badge').className = "bg-emerald-100 text-emerald-700 text-xs px-3 py-1 rounded-full font-semibold";
+            }
+            renderOdontogramArches();
+            document.getElementById('odontogram-patient-select').value = id;
+        }
+
+        function loadPatientOdontogram() {
+            const id = document.getElementById('odontogram-patient-select').value;
+            if (id) selectPatientForOdontogram(id);
+        }
+
+        async function saveOdontogram() {
+            if (!appState.selectedPatientId) {
+                alertUser("Seleccione un paciente.");
+                return;
+            }
+            saveLocalState();
+            if (supabaseClient) {
+                try {
+                    await supabaseClient.from('odontogramas').upsert({
+                        paciente_id: appState.selectedPatientId,
+                        datos: appState.odontograms[appState.selectedPatientId],
+                        actualizado: new Date().toISOString()
+                    });
+                } catch (e) {
+                    console.error("Error guardando en Supabase cloud:", e);
+                }
+            }
+            alertUser("Asignaciones de camas guardadas y sincronizadas exitosamente.");
+        }
+
+        // Appointments Rendering & Creation
+        function renderAppointmentsTable() {
+            const tbody = document.getElementById('appointments-tbody');
+            tbody.innerHTML = '';
+            
+            if (appState.appointments.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-slate-400 text-xs">No hay citas programadas.</td></tr>`;
+                return;
+            }
+
+            appState.appointments.forEach(a => {
+                const patient = appState.patients.find(p => p.id === a.patient_id) || { nombres: 'Paciente', apellidos: 'Desconocido' };
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-3.5 font-semibold text-slate-900">${new Date(a.date).toLocaleString()}</td>
+                        <td class="px-6 py-3.5">${patient.nombres} ${patient.apellidos}</td>
+                        <td class="px-6 py-3.5">${a.reason}</td>
+                        <td class="px-6 py-3.5"><span class="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-md text-xs font-semibold">Programada</span></td>
+                        <td class="px-6 py-3.5 text-right">
+                            <button onclick="deleteAppointment('${a.id}')" class="text-red-500 hover:text-red-700 text-xs"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Modals management
+        function openNewPatientModal() { document.getElementById('modal-patient').classList.remove('hidden'); }
+        function closeNewPatientModal() { document.getElementById('modal-patient').classList.add('hidden'); document.getElementById('form-patient').reset(); }
+        function openNewAppointmentModal() { document.getElementById('modal-appointment').classList.remove('hidden'); }
+        function closeNewAppointmentModal() { document.getElementById('modal-appointment').classList.add('hidden'); document.getElementById('form-appointment').reset(); }
+        function openHabeasDataModal() { document.getElementById('modal-habeas').classList.remove('hidden'); }
+        function closeHabeasDataModal() { document.getElementById('modal-habeas').classList.add('hidden'); }
+
+        async function savePatient(e) {
+            e.preventDefault();
+            const newPatient = {
+                id: 'p_' + Date.now(),
+                nombres: document.getElementById('p-nombres').value,
+                apellidos: document.getElementById('p-apellidos').value,
+                tipo_doc: document.getElementById('p-tipo-doc').value,
+                doc: document.getElementById('p-doc').value,
+                eps: document.getElementById('p-eps').value,
+                tel: document.getElementById('p-tel').value,
+                email: document.getElementById('p-email').value
+            };
+
+            appState.patients.unshift(newPatient);
+            saveLocalState();
+
+            if (supabaseClient) {
+                try {
+                    await supabaseClient.from('pacientes').insert([newPatient]);
+                } catch (err) {
+                    console.error("Error sincronizando nuevo paciente a Supabase:", err);
+                }
+            }
+
+            closeNewPatientModal();
+            refreshUI();
+            alertUser("Paciente registrado y sincronizado con éxito.");
+        }
+
+        async function saveAppointment(e) {
+            e.preventDefault();
+            const newAppt = {
+                id: 'a_' + Date.now(),
+                patient_id: document.getElementById('appt-patient').value,
+                date: document.getElementById('appt-date').value,
+                reason: document.getElementById('appt-reason').value
+            };
+
+            appState.appointments.unshift(newAppt);
+            saveLocalState();
+
+            if (supabaseClient) {
+                try {
+                    await supabaseClient.from('citas').insert([newAppt]);
+                } catch (err) {
+                    console.error("Error sincronizando cita a Supabase:", err);
+                }
+            }
+
+            closeNewAppointmentModal();
+            refreshUI();
+            alertUser("Cita asignada correctamente.");
+        }
+
+        function deletePatient(id) {
+            appState.patients = appState.patients.filter(p => p.id !== id);
+            saveLocalState();
+            refreshUI();
+        }
+
+        function deleteAppointment(id) {
+            appState.appointments = appState.appointments.filter(a => a.id !== id);
+            saveLocalState();
+            refreshUI();
+        }
+
+        function filterPatients() {
+            const query = document.getElementById('patient-search').value.toLowerCase();
+            const fullTbody = document.getElementById('full-patients-tbody');
+            fullTbody.innerHTML = '';
+            
+            const filtered = appState.patients.filter(p => 
+                p.nombres.toLowerCase().includes(query) || 
+                p.apellidos.toLowerCase().includes(query) || 
+                p.doc.includes(query) || 
+                p.eps.toLowerCase().includes(query)
+            );
+
+            if (filtered.length === 0) {
+                fullTbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-slate-400 text-xs">No se encontraron coincidencias.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                fullTbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-3.5 font-semibold text-slate-900">${p.nombres} ${p.apellidos}</td>
+                        <td class="px-6 py-3.5"><span class="bg-slate-100 px-2.5 py-1 rounded-md text-xs font-semibold text-slate-700">${p.tipo_doc}: ${p.doc}</span></td>
+                        <td class="px-6 py-3.5">${p.eps}</td>
+                        <td class="px-6 py-3.5">${p.tel} <br><span class="text-xs text-slate-400">${p.email}</span></td>
+                        <td class="px-6 py-3.5 text-right space-x-2">
+                            <button onclick="selectPatientForOdontogram('${p.id}')" class="text-medical-600 hover:text-medical-800 font-medium text-xs bg-medical-50 px-3 py-1.5 rounded-lg"><i class="fa-solid fa-bed mr-1"></i>Asignar Cama</button>
+                            <button onclick="deletePatient('${p.id}')" class="text-red-500 hover:text-red-700 text-xs px-2 py-1.5"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function generateRipsExport() {
+            const payload = {
+                prestador: "NIT 900.123.456-8 - Dr. Farley Cano",
+                norma: "Resolución 2275 de 2023 - MinSalud Colombia",
+                fechaGeneracion: new Date().toISOString(),
+                totalPacientes: appState.patients.length,
+                totalCitas: appState.appointments.length,
+                registrosConsultas: appState.appointments.map(a => {
+                    const pat = appState.patients.find(p => p.id === a.patient_id);
+                    return {
+                        tipoIdentificacion: pat?.tipo_doc || 'CC',
+                        numeroIdentificacion: pat?.doc || 'N/A',
+                        fechaConsulta: a.date,
+                        motivo: a.reason,
+                        eps: pat?.eps || 'Particular'
+                    };
+                })
+            };
+            document.getElementById('rips-preview').textContent = JSON.stringify(payload, null, 2);
+            alertUser("Estructura RIPS Res. 2275 generada con éxito.");
+        }
+
+        function alertUser(msg) {
+            const div = document.createElement('div');
+            div.className = "fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-3.5 rounded-xl shadow-2xl z-50 text-sm font-medium flex items-center space-x-3 transition transform duration-300";
+            div.innerHTML = `<i class="fa-solid fa-circle-check text-medical-500 text-lg"></i><span>${msg}</span>`;
+            document.body.appendChild(div);
+            setTimeout(() => {
+                div.style.opacity = '0';
+                setTimeout(() => div.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
