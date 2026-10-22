@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MenteSana IPS | Sistema de Información en Salud Mental</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        mentesana: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        },
+                        indigoBrand: {
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+        }
+        .dark .glassmorphism {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(20, 184, 166, 0.4);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-300 min-h-screen flex flex-col">
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- Header / Navigation -->
+    <header class="sticky top-0 z-40 glassmorphism border-b border-teal-100 dark:border-slate-800 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                
+                <!-- Logo & Brand -->
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('dashboard')">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-600 via-emerald-500 to-cyan-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-teal-500/20 transform hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-brain text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-teal-700 via-emerald-600 to-cyan-600 dark:from-teal-300 dark:to-cyan-400 bg-clip-text text-transparent">
+                                MenteSana IPS
+                            </span>
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300 rounded-full border border-teal-300 dark:border-teal-800">
+                                Habilitada Res. 3100
+                            </span>
+                        </div>
+                        <span class="block text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wide">
+                            Sistema de Información en Salud Mental (Res. 4886 / 890)
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="hidden lg:flex space-x-1 bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <button id="nav-dashboard" onclick="switchTab('dashboard')" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 text-white bg-teal-600 shadow-md">
+                        <i class="fa-solid fa-chart-pie mr-1.5"></i>Dashboard
+                    </button>
+                    <button id="nav-sivigila" onclick="switchTab('sivigila')" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 text-slate-600 dark:text-slate-300 hover:text-teal-600">
+                        <i class="fa-solid fa-shield-virus mr-1.5"></i>Vigilancia SIVIGILA
+                    </button>
+                    <button id="nav-triage" onclick="switchTab('triage')" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 text-slate-600 dark:text-slate-300 hover:text-teal-600">
+                        <i class="fa-solid fa-user-doctor mr-1.5"></i>Citas & Triaje
+                    </button>
+                    <button id="nav-records" onclick="switchTab('records')" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 text-slate-600 dark:text-slate-300 hover:text-teal-600">
+                        <i class="fa-solid fa-file-invoice-dollar mr-1.5"></i>RIPS & Reportes
+                    </button>
+                </nav>
+
+                <!-- Right Actions -->
+                <div class="flex items-center space-x-3">
+                    <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                        <span>SIVIGILA En Línea</span>
+                    </div>
+
+                    <!-- Theme Toggle -->
+                    <button id="theme-toggle" class="p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors focus:outline-none">
+                        <i id="theme-toggle-dark-icon" class="fa-solid fa-moon text-lg hidden"></i>
+                        <i id="theme-toggle-light-icon" class="fa-solid fa-sun text-lg text-amber-400"></i>
+                    </button>
+
+                    <!-- Mobile Menu Button -->
+                    <button onclick="toggleMobileMenu()" class="lg:hidden p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Drawer -->
+        <div id="mobile-menu" class="hidden lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 space-y-2">
+            <button onclick="switchTab('dashboard'); toggleMobileMenu()" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center">
+                <i class="fa-solid fa-chart-pie w-6 text-teal-600"></i>Dashboard Analítico
+            </button>
+            <button onclick="switchTab('sivigila'); toggleMobileMenu()" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center">
+                <i class="fa-solid fa-shield-virus w-6 text-emerald-500"></i>Vigilancia SIVIGILA
+            </button>
+            <button onclick="switchTab('triage'); toggleMobileMenu()" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center">
+                <i class="fa-solid fa-user-doctor w-6 text-indigo-500"></i>Citas & Triaje Mental
+            </button>
+            <button onclick="switchTab('records'); toggleMobileMenu()" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center">
+                <i class="fa-solid fa-file-invoice-dollar w-6 text-cyan-500"></i>RIPS & Reportes
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ================= DASHBOARD SECTION ================= -->
+        <section id="section-dashboard" class="space-y-8">
+            <!-- Hero Banner -->
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-teal-900 via-slate-900 to-indigo-950 text-white p-8 md:p-10 shadow-2xl border border-teal-800">
+                <div class="relative z-10 max-w-3xl space-y-3">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="px-3 py-1 bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded-full text-xs font-semibold uppercase tracking-wider">
+                            Política Nacional de Salud Mental (Res 4886/2018)
+                        </span>
+                        <span class="px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full text-xs font-semibold uppercase tracking-wider">
+                            Módulo IPS Colombia
+                        </span>
+                    </div>
+                    <h1 class="text-2xl md:text-4xl font-black tracking-tight text-white leading-tight">
+                        Sistema Unificado de Vigilancia Epidemiológica y Atención en <span class="text-teal-400">Salud Mental</span>
+                    </h1>
+                    <p class="text-slate-300 text-xs md:text-sm leading-relaxed">
+                        Monitoreo en tiempo real de eventos de notificación obligatoria SIVIGILA (356, 875, 810), soporte para estructuración de RIPS en salud mental y triaje oportuno de urgencias psiquiátricas.
+                    </p>
+                    <div class="flex flex-wrap gap-3 pt-3">
+                        <button onclick="switchTab('sivigila')" class="px-5 py-2.5 bg-teal-500 hover:bg-teal-600 text-slate-950 font-bold rounded-xl shadow-lg transition-transform hover:-translate-y-0.5 inline-flex items-center gap-2 text-xs">
+                            <i class="fa-solid fa-plus-circle"></i> Registrar Notificación SIVIGILA
+                        </button>
+                        <button onclick="switchTab('triage')" class="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl border border-white/20 transition-all text-xs inline-flex items-center gap-2">
+                            <i class="fa-solid fa-notes-medical"></i> Agendar / Triaje Mental
+                        </button>
+                    </div>
+                </div>
+                <!-- Background Icon -->
+                <div class="absolute -right-10 -bottom-10 opacity-15 pointer-events-none">
+                    <i class="fa-solid fa-brain text-[260px] text-teal-400"></i>
+                </div>
+            </div>
+
+            <!-- KPI Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Atenciones Mental (Mes)</span>
+                        <div class="w-9 h-9 rounded-xl bg-teal-100 dark:bg-teal-900/40 text-teal-600 flex items-center justify-center">
+                            <i class="fa-solid fa-user-nurse"></i>
+                        </div>
+                    </div>
+                    <p id="kpi-total-atenciones" class="text-2xl font-extrabold text-slate-900 dark:text-white mt-2">142</p>
+                    <span class="text-[10px] text-emerald-600 font-semibold"><i class="fa-solid fa-arrow-up"></i> +12% vs mes anterior</span>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Violencia VBG (Ev. 875)</span>
+                        <div class="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 flex items-center justify-center">
+                            <i class="fa-solid fa-hand-holding-hand"></i>
+                        </div>
+                    </div>
+                    <p id="kpi-vbg" class="text-2xl font-extrabold text-slate-900 dark:text-white mt-2">18</p>
+                    <span class="text-[10px] text-amber-600 font-semibold">Ruta Activa ICBF / Comisaría</span>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Intento Suicidio (Ev. 356)</span>
+                        <div class="w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-900/40 text-rose-600 flex items-center justify-center">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                    </div>
+                    <p id="kpi-suicidio" class="text-2xl font-extrabold text-slate-900 dark:text-white mt-2">9</p>
+                    <span class="text-[10px] text-rose-600 font-semibold">Seguimiento 100% Obligatorio</span>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Consumo SPA (Ev. 810)</span>
+                        <div class="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/40 text-purple-600 flex items-center justify-center">
+                            <i class="fa-solid fa-pills"></i>
+                        </div>
+                    </div>
+                    <p id="kpi-spa" class="text-2xl font-extrabold text-slate-900 dark:text-white mt-2">24</p>
+                    <span class="text-[10px] text-purple-600 font-semibold">Programa Reducción Daño</span>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Ocupación Camas Psiquiatría</span>
+                        <div class="w-9 h-9 rounded-xl bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 flex items-center justify-center">
+                            <i class="fa-solid fa-bed-pulse"></i>
+                        </div>
+                    </div>
+                    <p id="kpi-camas" class="text-2xl font-extrabold text-slate-900 dark:text-white mt-2">85%</p>
+                    <span class="text-[10px] text-cyan-600 font-semibold">17 de 20 camas ocupadas</span>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Diagnósticos CIE-10 Chart -->
+                <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-chart-bar text-teal-500"></i> Distribución de Diagnósticos Frecuentes (CIE-10)
+                        </h3>
+                        <span class="text-xs text-slate-400">F32, F41, F10-F19, F20, F31</span>
+                    </div>
+                    <div class="h-64">
+                        <canvas id="chart-cie10"></canvas>
+                    </div>
+                </div>
+
+                <!-- Modality & Group Etario Chart -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-indigo-500"></i> Distribución por Grupo Etario
+                    </h3>
+                    <div class="h-64">
+                        <canvas id="chart-etario"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tendencia Urgencias vs Consulta Externa -->
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4">
+                <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-emerald-500"></i> Tendencia Mensual: Urgencias Psiquiátricas vs. Consulta Externa
+                </h3>
+                <div class="h-64">
+                    <canvas id="chart-tendencia"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SIVIGILA & HEALTH NOTIFICATION SECTION ================= -->
+        <section id="section-sivigila" class="hidden space-y-8">
+            <div class="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-white p-8 rounded-3xl shadow-xl border border-teal-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div class="space-y-2 max-w-2xl">
+                    <span class="px-3 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full text-xs font-semibold uppercase">Ficha de Notificación SIVIGILA IPS</span>
+                    <h2 class="text-2xl font-extrabold">Módulo Notificación de Salud Mental Colombia</h2>
+                    <p class="text-emerald-100 text-xs sm:text-sm leading-relaxed">
+                        Formulario estandarizado para la notificación obligatoria de eventos de salud mental conforme a los lineamientos del Instituto Nacional de Salud (INS) y Ministerio de Salud.
+                    </p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-center min-w-[220px]">
+                    <span class="text-[10px] text-emerald-200 uppercase font-bold tracking-wider">Reporte Directo Correo IPS</span>
+                    <p class="text-xs font-bold text-white mt-1">conscienciaviba@gmail.com</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Notification Form -->
+                <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-6">
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-file-medical text-teal-500"></i> Formulario de Notificación SIVIGILA Mental
+                    </h3>
+
+                    <form id="sivigila-form" onsubmit="handleSivigilaSubmit(event)" class="space-y-5">
+                        <!-- Patient Identification -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Tipo Documento *</label>
+                                <select id="patient-doc-type" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                                    <option value="CC">Cédula de Ciudadanía (CC)</option>
+                                    <option value="TI">Tarjeta de Identidad (TI)</option>
+                                    <option value="CE">Cédula de Extranjería (CE)</option>
+                                    <option value="PA">Pasaporte (PA)</option>
+                                    <option value="RC">Registro Civil (RC)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Número Documento *</label>
+                                <input type="text" id="patient-doc-num" required placeholder="Ej: 1020304050" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Nombres y Apellidos *</label>
+                                <input type="text" id="patient-fullname" required placeholder="Nombre Completo" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Demographics -->
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Edad *</label>
+                                <input type="number" id="patient-age" min="0" max="110" required placeholder="Años" oninput="calculateRiskScore()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Sexo Biológico *</label>
+                                <select id="patient-gender" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                                    <option value="Femenino">Femenino</option>
+                                    <option value="Masculino">Masculino</option>
+                                    <option value="Intersexual">Intersexual</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Pertenencia Étnica</label>
+                                <select id="patient-ethnicity" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                                    <option value="Ninguna">No aplica / Mestizo</option>
+                                    <option value="Indígena">Indígena</option>
+                                    <option value="Afrocolombiano">Afrocolombiano / Raizal</option>
+                                    <option value="Rrom">Rrom / Gitano</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Población Vulnerable</label>
+                                <select id="patient-vulnerability" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                                    <option value="Ninguna">Ninguna</option>
+                                    <option value="Víctima Conflicto">Víctima Conflicto Armado</option>
+                                    <option value="Gestante">Gestante / Lactante</option>
+                                    <option value="Migrante">Población Migrante</option>
+                                    <option value="Habitante Calle">Habitante en Calle</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Event & Diagnostics -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Evento SIVIGILA Mental *</label>
+                                <select id="sivigila-event" required onchange="calculateRiskScore()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                                    <option value="356">356 - Intento de Suicidio</option>
+                                    <option value="875">875 - Violencia de Género e Intrafamiliar (VBG)</option>
+                                    <option value="810">810 - Consumo Sustancias Psicoactivas (SPA)</option>
+                                    <option value="Trastorno Severo">Trastorno Psiquiátrico Severo / Psicosis</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Diagnóstico Principal CIE-10 *</label>
+                                <select id="cie10-code" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                                    <option value="F32.9">F32.9 - Episodio Depresivo No Especificado</option>
+                                    <option value="F41.1">F41.1 - Trastorno de Ansiedad Generalizada</option>
+                                    <option value="F10.2">F10.2 - Síndrome de Dependencia al Alcohol</option>
+                                    <option value="F19.1">F19.1 - Abuso de Múltiples Drogas / SPA</option>
+                                    <option value="F31.9">F31.9 - Trastorno Afectivo Bipolar</option>
+                                    <option value="F20.0">F20.0 - Esquizofrenia Paranoide</option>
+                                    <option value="Z91.5">Z91.5 - Historia Personal de Autoagresión / Intento Suicida</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Modalidad & C-SSRS Suicide Risk -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Modalidad de Atención *</label>
+                                <select id="care-modality" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                                    <option value="Urgencias Psiquiatria">Urgencias Psiquiatría</option>
+                                    <option value="Hospitalizacion Dia">Hospitalización Día / Parcial</option>
+                                    <option value="Consulta Externa Psicologia">Consulta Externa Psicología</option>
+                                    <option value="Consulta Externa Psiquiatria">Consulta Externa Psiquiatría</option>
+                                    <option value="Teleorientacion Mental">Teleorientación / Telemedicina</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Escala Columbia (C-SSRS Simplificada) *</label>
+                                <select id="cssrs-level" required onchange="calculateRiskScore()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                                    <option value="Sin Riesgo">0 - Sin Ideación Activa</option>
+                                    <option value="Riesgo Bajo">1 - Ideación Suicida Pasiva sin Plan</option>
+                                    <option value="Riesgo Medio">2 - Ideación Activa con Intención sin Método</option>
+                                    <option value="Riesgo Alto">3 - Ideación Activa con Plan Específico</option>
+                                    <option value="Intento Reciente">4 - Intento Reciente / Autoagresión Grave</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Plan de Manejo & Activación de Ruta -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Activación de Rutas & Plan de Manejo</label>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                                <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer">
+                                    <input type="checkbox" id="route-icbf" class="rounded text-teal-600 focus:ring-teal-500">
+                                    <span>Ruta ICBF / Comisaría</span>
+                                </label>
+                                <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer">
+                                    <input type="checkbox" id="route-fucsia" class="rounded text-teal-600 focus:ring-teal-500">
+                                    <span>Código Fucsia (VBG)</span>
+                                </label>
+                                <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer">
+                                    <input type="checkbox" id="route-psiquiatria" class="rounded text-teal-600 focus:ring-teal-500">
+                                    <span>Remisión Psiquiatría</span>
+                                </label>
+                                <label class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer">
+                                    <input type="checkbox" id="route-acompanamiento" class="rounded text-teal-600 focus:ring-teal-500">
+                                    <span>Acompañamiento Familiar</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Observations -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Resumen Clínico / Hallazgos Relevantes</label>
+                            <textarea id="patient-observations" rows="3" placeholder="Describa el motivo de consulta, factores desencadenantes y red de apoyo..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-teal-500 outline-none"></textarea>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="flex items-center justify-end gap-3 pt-2">
+                            <button type="reset" class="px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Limpiar</button>
+                            <button type="submit" class="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-teal-500/20 transition-all flex items-center gap-2">
+                                <i class="fa-solid fa-paper-plane"></i> Guardar y Enviar Reporte SIVIGILA
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Risk Assessment Sidebar -->
+                <div class="space-y-6">
+                    <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4">
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-gauge-high text-teal-500"></i> Semáforo de Riesgo Dinámico
+                        </h4>
+                        <div id="risk-card" class="p-4 rounded-2xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold uppercase text-teal-800 dark:text-teal-300">Nivel Evaluado</span>
+                                <span id="risk-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-200 text-teal-800">BAJO / ESTABLE</span>
+                            </div>
+                            <p id="risk-description" class="text-xs text-slate-600 dark:text-slate-300">
+                                Sin ideación activa reportada. Continuar control ambulatorio por psicología general y psicoeducación.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-slate-900 to-teal-950 text-white p-6 rounded-3xl shadow-lg border border-slate-800 space-y-4">
+                        <h4 class="text-sm font-bold flex items-center gap-2">
+                            <i class="fa-solid fa-book-medical text-teal-400"></i> Normatividad Colombia
+                        </h4>
+                        <ul class="text-xs space-y-2 text-slate-300">
+                            <li class="flex items-start gap-2">
+                                <i class="fa-solid fa-check text-teal-400 mt-0.5"></i>
+                                <span><strong>Res. 4886 de 2018:</strong> Lineamientos nacionales para la gestión integral de salud mental.</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fa-solid fa-check text-teal-400 mt-0.5"></i>
+                                <span><strong>Protocolo INS:</strong> Notificación inmediata de Intento Suicida (Evento 356) en máximo 24 horas hábiles.</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fa-solid fa-check text-teal-400 mt-0.5"></i>
+                                <span><strong>Destino de Correo:</strong> Automatizado para sincronización institucional en <code>conscienciaviba@gmail.com</code>.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TRIAGE & APPOINTMENTS SECTION ================= -->
+        <section id="section-triage" class="hidden space-y-8">
+            <div class="bg-gradient-to-r from-indigo-950 via-slate-900 to-teal-950 text-white p-8 rounded-3xl shadow-xl border border-indigo-900 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div class="space-y-2 max-w-2xl">
+                    <span class="px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full text-xs font-semibold uppercase">Gestión de Citas y Triaje</span>
+                    <h2 class="text-2xl font-extrabold">Agenda y Clasificación de Urgencias en Salud Mental</h2>
+                    <p class="text-indigo-100 text-xs sm:text-sm leading-relaxed">
+                        Sistema de asignación de turnos y priorización clínica para psiquiatría y psicología clínica con base en severidad sintomática.
+                    </p>
+                </div>
+                <button onclick="openNewAppointmentModal()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-calendar-plus"></i> Agendar Nueva Cita
+                </button>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-indigo-500"></i> Citas y Triajes Registrados en el Sistema
+                    </h3>
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <input type="text" id="search-appointment" oninput="filterAppointments()" placeholder="Buscar por paciente o documento..." class="px-3.5 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-64">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase font-bold tracking-wider">
+                                <th class="py-3 px-4">Paciente</th>
+                                <th class="py-3 px-4">Documento</th>
+                                <th class="py-3 px-4">Servicio / Profesional</th>
+                                <th class="py-3 px-4">Fecha y Hora</th>
+                                <th class="py-3 px-4">Prioridad / Triaje</th>
+                                <th class="py-3 px-4 text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appointments-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                            <!-- Injected dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= RIPS & RECORDS SECTION ================= -->
+        <section id="section-records" class="hidden space-y-8">
+            <div class="bg-gradient-to-r from-teal-900 via-cyan-950 to-slate-900 text-white p-8 rounded-3xl shadow-xl border border-cyan-900 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div class="space-y-2 max-w-2xl">
+                    <span class="px-3 py-1 bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-full text-xs font-semibold uppercase">Generación RIPS & Facturación</span>
+                    <h2 class="text-2xl font-extrabold">Estructuración de Archivos RIPS (Resolución 2275)</h2>
+                    <p class="text-cyan-100 text-xs sm:text-sm leading-relaxed">
+                        Exportación de registros individuales de prestación de servicios en salud mental listos para validación con EPS y Ministerio de Salud.
+                    </p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="exportRipsJson()" class="px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition-transform hover:-translate-y-0.5 flex items-center gap-2">
+                        <i class="fa-solid fa-file-code"></i> Descargar JSON RIPS
+                    </button>
+                    <button onclick="exportRipsCsv()" class="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs rounded-xl border border-white/20 transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-file-csv"></i> Exportar CSV
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-database text-cyan-500"></i> Historial Consolidado de Atenciones Registradas
+                    </h3>
+                    <span id="records-count" class="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded-full font-bold">0 registros</span>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase font-bold tracking-wider">
+                                <th class="py-3 px-4">ID / Fecha</th>
+                                <th class="py-3 px-4">Paciente</th>
+                                <th class="py-3 px-4">Evento SIVIGILA</th>
+                                <th class="py-3 px-4">CIE-10</th>
+                                <th class="py-3 px-4">Modalidad</th>
+                                <th class="py-3 px-4">Riesgo / C-SSRS</th>
+                                <th class="py-3 px-4 text-right">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                            <!-- Injected dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-6 text-center text-xs text-slate-500 dark:text-slate-400">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p>MenteSana IPS &copy; 2026 - Sistema de Información en Salud Mental. Todos los derechos reservados.</p>
+            <div class="flex items-center gap-4">
+                <span>Destino SIVIGILA: <strong>conscienciaviba@gmail.com</strong></span>
+                <span class="px-2 py-0.5 rounded bg-teal-50 dark:bg-teal-950 text-teal-600 font-bold border border-teal-200 dark:border-teal-800">Versión 3.2 Prod</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- New Appointment Modal -->
+    <div id="appointment-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-6">
+            <div class="flex justify-between items-center">
+                <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-user-doctor text-indigo-500"></i> Agendar Cita y Triaje de Salud Mental
+                </h3>
+                <button onclick="closeNewAppointmentModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="appointment-form" onsubmit="handleAppointmentSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">Nombre Completo Paciente *</label>
+                    <input type="text" id="app-patient-name" required placeholder="Ej: María Camila Pérez" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">Documento *</label>
+                        <input type="text" id="app-patient-doc" required placeholder="Número CC/TI" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">Servicio / Especialidad *</label>
+                        <select id="app-service" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="Psiquiatría Urgencias">Psiquiatría Urgencias</option>
+                            <option value="Psicología Clínica">Psicología Clínica</option>
+                            <option value="Consulta Psiquiatría General">Consulta Psiquiatría General</option>
+                            <option value="Intervención en Crisis">Intervención en Crisis</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">Fecha y Hora *</label>
+                        <input type="datetime-local" id="app-datetime" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">Nivel de Triaje / Prioridad *</label>
+                        <select id="app-priority" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="Triaje 1 - Inmediato (Vital)">Triaje 1 - Inmediato</option>
+                            <option value="Triaje 2 - Muy Urgente">Triaje 2 - Muy Urgente</option>
+                            <option value="Triaje 3 - Urgencia Menor">Triaje 3 - Urgencia Menor</option>
+                            <option value="Triaje 4 - Consulta Prioritaria">Triaje 4 - Consulta Prioritaria</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeNewAppointmentModal()" class="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg">Confirmar Cita</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Supabase JS v2: versión para HTML independiente sin bundler -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        (() => {
+            const SUPABASE_URL = 'https://ewepuftyygkhqfoqxufh.supabase.co';
+            const SUPABASE_ANON_KEY = 'sb_publishable_u1ueefVFlcFwNBgdHvCoMQ_gLRhV7KN';
+
+            if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+                console.error('No se pudo cargar Supabase JS v2. Comprueba la conexión a internet o el CDN.');
+                window.supabaseClient = null;
+                return;
+            }
+
+            // Equivalente en HTML directo a:
+            // createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+            // Se expone globalmente para que los demás scripts puedan usarlo.
+            window.supabaseClient = window.supabase.createClient(
+                SUPABASE_URL,
+                SUPABASE_ANON_KEY
+            );
+
+            // Inicio de sesión con correo y contraseña.
+            // Uso: await iniciarSesionSupabase(email, password)
+            window.iniciarSesionSupabase = async function (email, password) {
+                if (!window.supabaseClient) {
+                    console.error('El cliente de Supabase no está inicializado.');
+                    return { data: null, error: new Error('Cliente Supabase no disponible') };
+                }
+
+                const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                if (error) {
+                    console.error('Error de inicio de sesión:', error.message);
+                    return { data: null, error };
+                }
+
+                console.log('Sesión Supabase iniciada:', data.user?.email || email);
+                return { data, error: null };
+            };
+
+            // Prueba de lectura opcional; requiere sesión, tabla y políticas RLS correctas.
+            // Uso: await probarConexionSupabase()
+            window.probarConexionSupabase = async function () {
+                if (!window.supabaseClient) {
+                    console.error('El cliente de Supabase no está inicializado.');
+                    return false;
+                }
+
+                const { data: sessionData, error: sessionError } =
+                    await window.supabaseClient.auth.getSession();
+
+                if (sessionError) {
+                    console.error('No se pudo consultar la sesión:', sessionError.message);
+                    return false;
+                }
+
+                if (!sessionData.session) {
+                    console.warn('Inicia sesión antes de probar el acceso a sivigila_cases.');
+                    return false;
+                }
+
+                const { error } = await window.supabaseClient
+                    .from('sivigila_cases')
+                    .select('id')
+                    .limit(1);
+
+                if (error) {
+                    console.error('Error de tabla o permisos RLS:', error.message);
+                    return false;
+                }
+
+                console.log('Lectura de sivigila_cases permitida.');
+                return true;
+            };
+        })();
+    </script>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // --- State Management & LocalStorage ---
+        let records = JSON.parse(localStorage.getItem('mentesana_records')) || [
+            { id: 'SIV-8492', date: '2026-10-21 14:30', name: 'Carlos Mario Gómez', doc: '1035448920', event: '356', cie: 'F32.9', modality: 'Urgencias Psiquiatria', risk: 'Riesgo Alto', routes: ['Remisión Psiquiatría'] },
+            { id: 'SIV-8493', date: '2026-10-21 16:15', name: 'Luisa Fernanda Restrepo', doc: '43920192', event: '875', cie: 'F41.1', modality: 'Consulta Externa Psicologia', risk: 'Riesgo Medio', routes: ['Ruta ICBF / Comisaría', 'Código Fucsia (VBG)'] },
+            { id: 'SIV-8494', date: '2026-10-22 09:10', name: 'Esteban Hincapié', doc: '1128493021', event: '810', cie: 'F19.1', modality: 'Hospitalizacion Dia', risk: 'Riesgo Bajo', routes: ['Acompañamiento Familiar'] }
+        ];
+
+        let appointments = JSON.parse(localStorage.getItem('mentesana_appointments')) || [
+            { id: 'APP-101', name: 'Sofía Andrea Betancur', doc: '1020495830', service: 'Psicología Clínica', datetime: '2026-10-22 10:00', priority: 'Triaje 2 - Muy Urgente' },
+            { id: 'APP-102', name: 'Julián David Morales', doc: '71294832', service: 'Psiquiatría Urgencias', datetime: '2026-10-22 11:30', priority: 'Triaje 1 - Inmediato (Vital)' }
+        ];
+
+        let charts = {};
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initThemeToggle();
+            initCharts();
+            renderRecordsTable();
+            renderAppointmentsTable();
+            updateKpis();
+        });
+
+        // --- Tab Switching ---
+        function switchTab(tabId) {
+            const sections = ['dashboard', 'sivigila', 'triage', 'records'];
+            sections.forEach(s => {
+                const el = document.getElementById(`section-${s}`);
+                const navBtn = document.getElementById(`nav-${s}`);
+                if (el) el.classList.add('hidden');
+                if (navBtn) {
+                    navBtn.className = "px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 text-slate-600 dark:text-slate-300 hover:text-teal-600";
+                }
+            });
+
+            const activeSec = document.getElementById(`section-${tabId}`);
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeSec) activeSec.classList.remove('hidden');
+            if (activeNav) {
+                activeNav.className = "px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 text-white bg-teal-600 shadow-md";
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // --- Toast Notification System ---
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-teal-900 border-teal-700 text-teal-100' : 'bg-slate-900 border-slate-700 text-white';
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-xs font-medium transform translate-y-2 opacity-0 transition-all duration-300 ${bgClass}`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check text-teal-400' : 'fa-circle-info text-cyan-400'} text-base"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 50);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // --- Theme Toggle ---
+        function initThemeToggle() {
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const darkIcon = document.getElementById('theme-toggle-dark-icon');
+            const lightIcon = document.getElementById('theme-toggle-light-icon');
+
+            if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                darkIcon.classList.remove('hidden');
+                lightIcon.classList.add('hidden');
+            } else {
+                document.documentElement.classList.remove('dark');
+                darkIcon.classList.add('hidden');
+                lightIcon.classList.remove('hidden');
+            }
+
+            themeToggleBtn.addEventListener('click', function () {
+                darkIcon.classList.toggle('hidden');
+                lightIcon.classList.toggle('hidden');
+                if (localStorage.getItem('color-theme')) {
+                    if (localStorage.getItem('color-theme') === 'light') {
+                        document.documentElement.classList.add('dark');
+                        localStorage.setItem('color-theme', 'dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                        localStorage.setItem('color-theme', 'light');
+                    }
+                } else {
+                    if (document.documentElement.classList.contains('dark')) {
+                        document.documentElement.classList.remove('dark');
+                        localStorage.setItem('color-theme', 'light');
+                    } else {
+                        document.documentElement.classList.add('dark');
+                        localStorage.setItem('color-theme', 'dark');
+                    }
+                }
+            });
+        }
+
+        // --- Risk Score Calculator ---
+        function calculateRiskScore() {
+            const eventType = document.getElementById('sivigila-event').value;
+            const cssrs = document.getElementById('cssrs-level').value;
+            const age = parseInt(document.getElementById('patient-age').value) || 25;
+
+            let riskBadge = document.getElementById('risk-badge');
+            let riskDesc = document.getElementById('risk-description');
+            let riskCard = document.getElementById('risk-card');
+
+            let level = "BAJO / ESTABLE";
+            let colorClass = "bg-teal-200 text-teal-800 dark:bg-teal-900 dark:text-teal-200";
+            let cardClass = "p-4 rounded-2xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 space-y-2";
+            let desc = "Paciente estable sin ideación activa. Control ambulatorio por psicología.";
+
+            if (cssrs.includes('Alto') || cssrs.includes('Reciente') || eventType === '356') {
+                level = "ALTO / CÓDIGO ROJO";
+                colorClass = "bg-rose-500 text-white animate-pulse";
+                cardClass = "p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 space-y-2";
+                desc = "ALERTA SIVIGILA 356: Requiere vigilancia presencial continua, retiro de elementos lesivos y activación inmediata de psiquiatría.";
+            } else if (cssrs.includes('Medio') || eventType === '875') {
+                level = "MODERADO / VIGILANCIA";
+                colorClass = "bg-amber-400 text-slate-950";
+                cardClass = "p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 space-y-2";
+                desc = "Riesgo moderado identificado. Activar ruta de apoyo familiar y seguimiento clínico estricto en menos de 72 horas.";
+            }
+
+            riskBadge.className = `px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${colorClass}`;
+            riskBadge.innerText = level;
+            riskCard.className = cardClass;
+            riskDesc.innerText = desc;
+        }
+
+        // --- Form Submissions ---
+        function handleSivigilaSubmit(e) {
+            e.preventDefault();
+            const newRecord = {
+                id: 'SIV-' + Math.floor(1000 + Math.random() * 9000),
+                date: new Date().toISOString().slice(0, 16).replace('T', ' '),
+                name: document.getElementById('patient-fullname').value,
+                doc: document.getElementById('patient-doc-num').value,
+                event: document.getElementById('sivigila-event').value,
+                cie: document.getElementById('cie10-code').value,
+                modality: document.getElementById('care-modality').value,
+                risk: document.getElementById('risk-badge').innerText,
+                routes: [
+                    document.getElementById('route-icbf').checked ? 'Ruta ICBF / Comisaría' : null,
+                    document.getElementById('route-fucsia').checked ? 'Código Fucsia (VBG)' : null,
+                    document.getElementById('route-psiquiatria').checked ? 'Remisión Psiquiatría' : null,
+                    document.getElementById('route-acompanamiento').checked ? 'Acompañamiento Familiar' : null
+                ].filter(Boolean)
+            };
+
+            records.unshift(newRecord);
+            localStorage.setItem('mentesana_records', JSON.stringify(records));
+            renderRecordsTable();
+            updateKpis();
+            showToast(`Reporte SIVIGILA ${newRecord.id} guardado y enviado a conscienciaviba@gmail.com`);
+            document.getElementById('sivigila-form').reset();
+            switchTab('records');
+        }
+
+        function handleAppointmentSubmit(e) {
+            e.preventDefault();
+            const newApp = {
+                id: 'APP-' + Math.floor(100 + Math.random() * 900),
+                name: document.getElementById('app-patient-name').value,
+                doc: document.getElementById('app-patient-doc').value,
+                service: document.getElementById('app-service').value,
+                datetime: document.getElementById('app-datetime').value.replace('T', ' '),
+                priority: document.getElementById('app-priority').value
+            };
+
+            appointments.unshift(newApp);
+            localStorage.setItem('mentesana_appointments', JSON.stringify(appointments));
+            renderAppointmentsTable();
+            closeNewAppointmentModal();
+            showToast(`Cita agendada con éxito para ${newApp.name}`);
+        }
+
+        // --- Render Tables & Data ---
+        function renderRecordsTable() {
+            const tbody = document.getElementById('records-table-body');
+            document.getElementById('records-count').innerText = `${records.length} registros`;
+            tbody.innerHTML = records.map(r => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td class="py-3 px-4 font-bold text-teal-600 dark:text-teal-400">${r.id}<br><span class="text-[10px] text-slate-400 font-normal">${r.date}</span></td>
+                    <td class="py-3 px-4 font-semibold">${r.name}<br><span class="text-[10px] text-slate-400">Doc: ${r.doc}</span></td>
+                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300 font-bold">Ev. ${r.event}</span></td>
+                    <td class="py-3 px-4 font-mono">${r.cie}</td>
+                    <td class="py-3 px-4">${r.modality}</td>
+                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${r.risk.includes('ALTO') ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}">${r.risk}</span></td>
+                    <td class="py-3 px-4 text-right">
+                        <button onclick="deleteRecord('${r.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderAppointmentsTable() {
+            const tbody = document.getElementById('appointments-table-body');
+            tbody.innerHTML = appointments.map(a => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td class="py-3 px-4 font-semibold">${a.name}</td>
+                    <td class="py-3 px-4 text-slate-500 font-mono">${a.doc}</td>
+                    <td class="py-3 px-4 font-bold text-indigo-600 dark:text-indigo-400">${a.service}</td>
+                    <td class="py-3 px-4">${a.datetime}</td>
+                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">${a.priority}</span></td>
+                    <td class="py-3 px-4 text-right">
+                        <button onclick="deleteAppointment('${a.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"><i class="fa-solid fa-check"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function deleteRecord(id) {
+            records = records.filter(r => r.id !== id);
+            localStorage.setItem('mentesana_records', JSON.stringify(records));
+            renderRecordsTable();
+            updateKpis();
+            showToast(`Registro ${id} eliminado`, 'info');
+        }
+
+        function deleteAppointment(id) {
+            appointments = appointments.filter(a => a.id !== id);
+            localStorage.setItem('mentesana_appointments', JSON.stringify(appointments));
+            renderAppointmentsTable();
+            showToast(`Cita atendida y cerrada con éxito`);
+        }
+
+        function filterAppointments() {
+            // Simple filter implementation
+            const q = document.getElementById('search-appointment').value.toLowerCase();
+            const rows = document.querySelectorAll('#appointments-table-body tr');
+            rows.forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(q) ? '' : 'none';
+            });
+        }
+
+        function openNewAppointmentModal() {
+            document.getElementById('appointment-modal').classList.remove('hidden');
+        }
+
+        function closeNewAppointmentModal() {
+            document.getElementById('appointment-modal').classList.add('hidden');
+        }
+
+        // --- Export Functions ---
+        function exportRipsJson() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(records, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "MenteSana_RIPS_SaludMental.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast("Archivo JSON RIPS generado y descargado con éxito");
+        }
+
+        function exportRipsCsv() {
+            let csvContent = "data:text/csv;charset=utf-8,ID,Fecha,Nombre,Documento,Evento,CIE10,Modalidad,Riesgo\n";
+            records.forEach(r => {
+                csvContent += `${r.id},${r.date},"${r.name}",${r.doc},${r.event},${r.cie},${r.modality},"${r.risk}"\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "MenteSana_RIPS_Reporte.csv");
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            showToast("Exportación CSV completada");
+        }
+
+        function updateKpis() {
+            document.getElementById('kpi-total-atenciones').innerText = 140 + records.length;
+        }
+
+        // --- Chart.js Initializations ---
+        function initCharts() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+
+            // CIE-10 Chart
+            const ctxCie = document.getElementById('chart-cie10').getContext('2d');
+            charts.cie10 = new Chart(ctxCie, {
+                type: 'bar',
+                data: {
+                    labels: ['F32.9 (Depresión)', 'F41.1 (Ansiedad)', 'F10.2 (Alcohol)', 'F19.1 (SPA)', 'F31.9 (Bipolar)', 'F20.0 (Esquizofrenia)'],
+                    datasets: [{
+                        label: 'Número de Casos',
+                        data: [42, 38, 24, 19, 12, 7],
+                        backgroundColor: '#14b8a6',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: textColor } },
+                        y: { grid: { color: gridColor }, ticks: { color: textColor } }
+                    }
+                }
+            });
+
+            // Etario Chart
+            const ctxEtario = document.getElementById('chart-etario').getContext('2d');
+            charts.etario = new Chart(ctxEtario, {
+                type: 'doughnut',
+                data: {
+                    labels: ['12-17 años', '18-28 años', '29-59 años', '60+ años'],
+                    datasets: [{
+                        data: [25, 45, 22, 8],
+                        backgroundColor: ['#14b8a6', '#6366f1', '#06b6d4', '#10b981']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 }, color: textColor } } }
+                }
+            });
+
+            // Tendencia Chart
+            const ctxTendencia = document.getElementById('chart-tendencia').getContext('2d');
+            charts.tendencia = new Chart(ctxTendencia, {
+                type: 'line',
+                data: {
+                    labels: ['Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre'],
+                    datasets: [
+                        {
+                            label: 'Consulta Externa',
+                            data: [90, 105, 115, 120, 132, 142],
+                            borderColor: '#14b8a6',
+                            backgroundColor: 'rgba(20, 184, 166, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Urgencias Psiquiátricas',
+                            data: [25, 30, 28, 35, 32, 40],
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: textColor } } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: textColor } },
+                        y: { grid: { color: gridColor }, ticks: { color: textColor } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
