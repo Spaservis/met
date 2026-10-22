@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediSalud Colombia - Gestión Integral IPS con Supabase</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase JS Library v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81' },
+                        health: { 50: '#ecfdf5', 500: '#10b981', 600: '#059669', 700: '#047857' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-full bg-slate-900 text-slate-100 font-sans antialiased overflow-hidden">
+
+    <!-- App Wrapper -->
+    <div id="app" class="flex h-full w-full">
+
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-64 bg-slate-950 text-slate-300 flex flex-col transition-all duration-300 z-30 shadow-2xl lg:static absolute inset-y-0 left-0 transform -translate-x-full lg:translate-x-0 border-r border-slate-800">
+            <!-- Logo Header -->
+            <div class="h-16 flex items-center justify-between px-6 bg-slate-900 border-b border-slate-800">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-health-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                        <i class="fa-solid fa-stethoscope text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-white tracking-wide text-base block">MediSalud <span class="text-health-400 text-xs px-1.5 py-0.5 rounded bg-health-900/50 border border-health-700/50">IPS COL</span></span>
+                        <span class="text-[11px] text-slate-400 flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>Supabase Conectado</span>
+                    </div>
+                </div>
+                <button onclick="toggleMobileSidebar()" class="lg:hidden text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+                <p class="px-3 text-[10px] font-semibold tracking-wider text-slate-500 uppercase mb-2">Módulo Principal</p>
+                <a href="#dashboard" onclick="switchTab('dashboard')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group bg-brand-600 text-white shadow-md shadow-brand-600/20" data-tab="dashboard">
+                    <i class="fa-solid fa-chart-pie w-5 mr-3 text-brand-200 group-hover:text-white"></i> Dashboard General
+                </a>
+                <a href="#patients" onclick="switchTab('patients')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group hover:bg-slate-900 text-slate-300 hover:text-white" data-tab="patients">
+                    <i class="fa-solid fa-users w-5 mr-3 text-slate-400 group-hover:text-health-400"></i> Gestión de Pacientes
+                </a>
+                <a href="#schedule" onclick="switchTab('schedule')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group hover:bg-slate-900 text-slate-300 hover:text-white" data-tab="schedule">
+                    <i class="fa-solid fa-calendar-days w-5 mr-3 text-slate-400 group-hover:text-health-400"></i> Agenda & Citas
+                </a>
+
+                <p class="px-3 text-[10px] font-semibold tracking-wider text-slate-500 uppercase mt-6 mb-2">Atención Médica</p>
+                <a href="#general-med" onclick="switchTab('general-med')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group hover:bg-slate-900 text-slate-300 hover:text-white" data-tab="general-med">
+                    <i class="fa-solid fa-user-doctor w-5 mr-3 text-slate-400 group-hover:text-health-400"></i> Medicina General
+                </a>
+                <a href="#psychology" onclick="switchTab('psychology')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group hover:bg-slate-900 text-slate-300 hover:text-white" data-tab="psychology">
+                    <i class="fa-solid fa-brain w-5 mr-3 text-slate-400 group-hover:text-health-400"></i> Psicología Clínica
+                </a>
+                <!-- Nueva pestaña de Odontología -->
+                <a href="#dentistry" onclick="switchTab('dentistry')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group hover:bg-slate-900 text-slate-300 hover:text-white" data-tab="dentistry">
+                    <i class="fa-solid fa-tooth w-5 mr-3 text-slate-400 group-hover:text-amber-400"></i> Odontología Especializada
+                </a>
+
+                <p class="px-3 text-[10px] font-semibold tracking-wider text-slate-500 uppercase mt-6 mb-2">Normativa & Cloud DB</p>
+                <a href="#cloud-records" onclick="switchTab('cloud-records')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group hover:bg-slate-900 text-slate-300 hover:text-white" data-tab="cloud-records">
+                    <i class="fa-solid fa-database w-5 mr-3 text-slate-400 group-hover:text-emerald-400"></i> Registros Supabase (<span id="db-count">0</span>)
+                </a>
+                <a href="#rips" onclick="switchTab('rips')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group hover:bg-slate-900 text-slate-300 hover:text-white" data-tab="rips">
+                    <i class="fa-solid fa-file-invoice-dollar w-5 mr-3 text-slate-400 group-hover:text-amber-400"></i> Módulo RIPS & Facturación
+                </a>
+                <a href="#sivigila" onclick="switchTab('sivigila')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group hover:bg-slate-900 text-slate-300 hover:text-white" data-tab="sivigila">
+                    <i class="fa-solid fa-shield-virus w-5 mr-3 text-slate-400 group-hover:text-red-400"></i> Indicadores SIVIGILA
+                </a>
+                <a href="#cie10" onclick="switchTab('cie10')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group hover:bg-slate-900 text-slate-300 hover:text-white" data-tab="cie10">
+                    <i class="fa-solid fa-book-medical w-5 mr-3 text-slate-400 group-hover:text-teal-400"></i> Buscador CIE-10
+                </a>
+            </nav>
+
+            <!-- User Footer -->
+            <div class="p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center font-bold text-white text-sm">DR</div>
+                    <div class="overflow-hidden">
+                        <p class="text-xs font-semibold text-white truncate">Dra. Marcela Gómez</p>
+                        <p class="text-[11px] text-slate-400 truncate">Coord. Médica - IPS</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-900">
+            <!-- Top Navbar -->
+            <header class="h-16 bg-slate-950 border-b border-slate-800 flex items-center justify-between px-6 shadow-sm z-20">
+                <div class="flex items-center space-x-4">
+                    <button onclick="toggleMobileSidebar()" class="lg:hidden text-slate-400 hover:text-brand-500 focus:outline-none">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                    <div>
+                        <h1 id="page-title" class="text-lg font-bold text-white">Dashboard General IPS</h1>
+                        <p class="text-xs text-slate-400 hidden sm:block">Sincronización en tiempo real con Supabase Cloud (MinSalud / RIPS JSON)</p>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Scrollable Viewport -->
+            <div id="content-viewport" class="flex-1 overflow-y-auto p-6 bg-slate-900">
+                <!-- TAB DASHBOARD -->
+                <div id="tab-dashboard" class="tab-content space-y-6">
+                     <p class="text-slate-300 text-xs">Módulos principales activos en el panel de control.</p>
+                </div>
+
+                <!-- TAB ODONTOLOGÍA (NUEVO MÓDULO EMBEBIDO) -->
+                <div id="tab-dentistry" class="tab-content hidden h-full w-full">
+                    <iframe id="dentistryIframe" src="odontologia.html" class="w-full h-full border-0 rounded-2xl shadow-2xl" style="min-height: calc(100vh - 110px);"></iframe>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById('tab-' + tabId);
+            if (target) target.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-link').forEach(el => {
+                el.classList.remove('bg-brand-600', 'text-white', 'shadow-md', 'shadow-brand-600/20');
+                el.classList.add('hover:bg-slate-900', 'text-slate-300');
+            });
+
+            const activeLink = document.querySelector(`[data-tab="${tabId}"]`);
+            if (activeLink) {
+                activeLink.classList.remove('hover:bg-slate-900', 'text-slate-300');
+                activeLink.classList.add('bg-brand-600', 'text-white', 'shadow-md', 'shadow-brand-600/20');
+            }
+
+            const titles = {
+                'dashboard': 'Dashboard General IPS',
+                'patients': 'Gestión de Pacientes',
+                'schedule': 'Agenda & Citas Médicas',
+                'general-med': 'Historia Clínica - Medicina General',
+                'psychology': 'Módulo de Psicología Clínica',
+                'dentistry': 'Departamento de Odontología Especializada (RIPS Res. 2275)',
+                'cloud-records': 'Registros Cloud Supabase',
+                'rips': 'Módulo RIPS & Facturación Electrónica',
+                'sivigila': 'Indicadores SIVIGILA & Salud Pública',
+                'cie10': 'Buscador Oficial CIE-10 Colombia'
+            };
+            document.getElementById('page-title').innerText = titles[tabId] || 'MediSalud IPS';
+        }
+
+        function toggleMobileSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+        }
+    </script>
+</body>
+</html>
