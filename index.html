@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Página con Respaldo en Supabase</title>
+    
+    <!-- 1. Cargar la librería oficial de Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <h1>Formulario de Registro / Respaldo</h1>
+    
+    <!-- Tu formulario web -->
+    <form id="miFormulario">
+        <div>
+            <label for="nombre">Nombre:</label><br>
+            <input type="text" id="nombre" required>
+        </div>
+        <br>
+        <div>
+            <label for="email">Correo electrónico:</label><br>
+            <input type="email" id="email" required>
+        </div>
+        <br>
+        <div>
+            <label for="mensaje">Mensaje o datos a registrar:</label><br>
+            <textarea id="mensaje" rows="4" required></textarea>
+        </div>
+        <br>
+        <button type="submit">Enviar y Respaldar</button>
+    </form>
+
+    <!-- 2. Tu etiqueta <script> con la lógica de conexión -->
+    <script>
+        // Tus credenciales de Supabase
+        const SUPABASE_URL = "https://ewepuftyygkhqfoqxufh.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_u1ueefVFlcFwNBgdHvCoMQ_gLRhV7KN";
+
+        // Inicializar el cliente de Supabase
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Escuchar cuando el usuario envíe el formulario
+        document.getElementById('miFormulario').addEventListener('submit', async function(e) {
+            e.preventDefault(); // Evita que la página se recargue
+
+            // Capturar los valores escritos en el formulario
+            const nombreUsuario = document.getElementById('nombre').value;
+            const emailUsuario = document.getElementById('email').value;
+            const mensajeUsuario = document.getElementById('mensaje').value;
+
+            // Enviar los datos a la tabla 'registros' en Supabase
+            const { data, error } = await supabaseClient
+                .from('registros')
+                .insert([
+                    { 
+                      nombre: nombreUsuario, 
+                      email: emailUsuario, 
+                      mensaje: mensajeUsuario 
+                    }
+                ]);
+
+            if (error) {
+                console.error('Error al guardar en Supabase:', error.message);
+                alert('Hubo un error al guardar la información.');
+            } else {
+                console.log('Información guardada con éxito:', data);
+                alert('¡Datos registrados y respaldados correctamente!');
+                
+                // Limpiar el formulario después de enviar
+                document.getElementById('miFormulario').reset();
+            }
+        });
+    </script>
+
+</body>
+</html>
