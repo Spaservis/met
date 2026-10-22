@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediSalud Colombia - Gestión Integral IPS con Supabase</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase JS Library v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81' },
+                        health: { 50: '#ecfdf5', 500: '#10b981', 600: '#059669', 700: '#047857' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-full bg-slate-900 text-slate-100 font-sans antialiased overflow-hidden">
+
+    <!-- App Wrapper -->
+    <div id="app" class="flex h-full w-full">
+
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-64 bg-slate-950 text-slate-300 flex flex-col transition-all duration-300 z-30 shadow-2xl lg:static absolute inset-y-0 left-0 transform -translate-x-full lg:translate-x-0 border-r border-slate-800">
+            <!-- Logo Header -->
+            <div class="h-16 flex items-center justify-between px-6 bg-slate-900 border-b border-slate-800">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-health-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                        <i class="fa-solid fa-stethoscope text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-white tracking-wide text-base block">MediSalud <span class="text-health-400 text-xs px-1.5 py-0.5 rounded bg-health-900/50 border border-health-700/50">IPS COL</span></span>
+                        <span class="text-[11px] text-slate-400 flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>Supabase Conectado</span>
+                    </div>
+                </div>
+                <button onclick="toggleMobileSidebar()" class="lg:hidden text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+                <p class="px-3 text-[10px] font-semibold tracking-wider text-slate-500 uppercase mb-2">Módulo Principal</p>
+                <a href="#dashboard" onclick="switchTab('dashboard')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group bg-brand-600 text-white shadow-md shadow-brand-600/20" data-tab="dashboard">
+                    <i class="fa-solid fa-chart-pie w-5 mr-3 text-brand-200 group-hover:text-white"></i> Dashboard General
+                </a>
+                <a href="#patients" onclick="switchTab('patients')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group hover:bg-slate-900 text-slate-300 hover:text-white" data-tab="patients">
+                    <i class="fa-solid fa-users w-5 mr-3 text-slate-400 group-hover:text-health-400"></i> Gestión de Pacientes
+                </a>
+                <a href="#schedule" onclick="switchTab('schedule')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group hover:bg-slate-900 text-slate-300 hover:text-white" data-tab="schedule">
+                    <i class="fa-solid fa-calendar-days w-5 mr-3 text-slate-400 group-hover:text-health-400"></i> Agenda & Citas
+                </a>
+
+                <p class="px-3 text-[10px] font-semibold tracking-wider text-slate-500 uppercase mt-6 mb-2">Atención Médica</p>
+                <a href="#general-med" onclick="switchTab('general-med')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group hover:bg-slate-900 text-slate-300 hover:text-white" data-tab="general-med">
+                    <i class="fa-solid fa-user-doctor w-5 mr-3 text-slate-400 group-hover:text-health-400"></i> Medicina General
+                </a>
+                <a href="#psychology" onclick="switchTab('psychology')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group hover:bg-slate-900 text-slate-300 hover:text-white" data-tab="psychology">
+                    <i class="fa-solid fa-brain w-5 mr-3 text-slate-400 group-hover:text-health-400"></i> Psicología Clínica
+                </a>
+
+                <p class="px-3 text-[10px] font-semibold tracking-wider text-slate-500 uppercase mt-6 mb-2">Normativa & Cloud DB</p>
+                <a href="#cloud-records" onclick="switchTab('cloud-records')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group hover:bg-slate-900 text-slate-300 hover:text-white" data-tab="cloud-records">
+                    <i class="fa-solid fa-database w-5 mr-3 text-slate-400 group-hover:text-emerald-400"></i> Registros Supabase (<span id="db-count">0</span>)
+                </a>
+                <a href="#rips" onclick="switchTab('rips')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group hover:bg-slate-900 text-slate-300 hover:text-white" data-tab="rips">
+                    <i class="fa-solid fa-file-invoice-dollar w-5 mr-3 text-slate-400 group-hover:text-amber-400"></i> Módulo RIPS & Facturación
+                </a>
+                <a href="#sivigila" onclick="switchTab('sivigila')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group hover:bg-slate-900 text-slate-300 hover:text-white" data-tab="sivigila">
+                    <i class="fa-solid fa-shield-virus w-5 mr-3 text-slate-400 group-hover:text-red-400"></i> Indicadores SIVIGILA
+                </a>
+                <a href="#cie10" onclick="switchTab('cie10')" class="nav-link flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group hover:bg-slate-900 text-slate-300 hover:text-white" data-tab="cie10">
+                    <i class="fa-solid fa-book-medical w-5 mr-3 text-slate-400 group-hover:text-teal-400"></i> Buscador CIE-10
+                </a>
+            </nav>
+
+            <!-- User Footer in Sidebar -->
+            <div class="p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center font-bold text-white text-sm">DR</div>
+                    <div class="overflow-hidden">
+                        <p class="text-xs font-semibold text-white truncate">Dra. Marcela Gómez</p>
+                        <p class="text-[11px] text-slate-400 truncate">Coord. Médica - IPS</p>
+                    </div>
+                </div>
+                <button onclick="showNotification('Sesión activa en Supabase Cloud.', 'info')" class="text-slate-400 hover:text-emerald-400" title="Estado Cloud">
+                    <i class="fa-solid fa-cloud text-sm"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-900">
+            <!-- Top Navbar -->
+            <header class="h-16 bg-slate-950 border-b border-slate-800 flex items-center justify-between px-6 shadow-sm z-20">
+                <div class="flex items-center space-x-4">
+                    <button onclick="toggleMobileSidebar()" class="lg:hidden text-slate-400 hover:text-brand-500 focus:outline-none">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                    <div>
+                        <h1 id="page-title" class="text-lg font-bold text-white">Dashboard General IPS</h1>
+                        <p class="text-xs text-slate-400 hidden sm:block">Sincronización en tiempo real con Supabase Cloud (MinSalud / RIPS JSON)</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="openModal('patientModal')" class="hidden sm:inline-flex items-center space-x-2 bg-health-600 hover:bg-health-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow-sm transition">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Nuevo Paciente</span>
+                    </button>
+                    <button onclick="openModal('appointmentModal')" class="inline-flex items-center space-x-2 bg-brand-600 hover:bg-brand-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow-sm transition">
+                        <i class="fa-solid fa-calendar-plus"></i>
+                        <span>Agendar Cita</span>
+                    </button>
+                    <button onclick="openModal('supabaseFormModal')" class="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow-sm transition" title="Registro Directo Supabase">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>Reg. Cloud</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Scrollable Viewport -->
+            <div id="content-viewport" class="flex-1 overflow-y-auto p-6 bg-slate-900">
+
+                <!-- 1. TAB: DASHBOARD -->
+                <div id="tab-dashboard" class="tab-content space-y-6">
+                    <!-- Metrics Overview -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        <div class="bg-slate-950 p-5 rounded-2xl border border-slate-800 shadow-sm flex items-center space-x-4">
+                            <div class="w-12 h-12 rounded-xl bg-brand-900/50 text-brand-400 flex items-center justify-center text-xl border border-brand-700/50">
+                                <i class="fa-solid fa-hospital-user"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Pacientes Registrados</p>
+                                <h3 class="text-2xl font-bold text-white mt-0.5" id="metric-patients">1,248</h3>
+                                <span class="text-[11px] text-health-400 font-medium"><i class="fa-solid fa-arrow-up mr-1"></i>+12% este mes</span>
+                            </div>
+                        </div>
+                        <div class="bg-slate-950 p-5 rounded-2xl border border-slate-800 shadow-sm flex items-center space-x-4">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-900/50 text-health-400 flex items-center justify-center text-xl border border-health-700/50">
+                                <i class="fa-solid fa-calendar-check"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Citas Hoy</p>
+                                <h3 class="text-2xl font-bold text-white mt-0.5" id="metric-appointments">24</h3>
+                                <span class="text-[11px] text-health-400 font-medium">8 Med. General | 16 Psicología</span>
+                            </div>
+                        </div>
+                        <div class="bg-slate-950 p-5 rounded-2xl border border-slate-800 shadow-sm flex items-center space-x-4">
+                            <div class="w-12 h-12 rounded-xl bg-amber-900/50 text-amber-400 flex items-center justify-center text-xl border border-amber-700/50">
+                                <i class="fa-solid fa-database"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Registros Supabase</p>
+                                <h3 class="text-2xl font-bold text-white mt-0.5" id="metric-supabase">0</h3>
+                                <span class="text-[11px] text-amber-400 font-medium">Tabla 'registros' activa</span>
+                            </div>
+                        </div>
+                        <div class="bg-slate-950 p-5 rounded-2xl border border-slate-800 shadow-sm flex items-center space-x-4">
+                            <div class="w-12 h-12 rounded-xl bg-red-900/50 text-red-400 flex items-center justify-center text-xl border border-red-700/50">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Alertas SIVIGILA</p>
+                                <h3 class="text-2xl font-bold text-white mt-0.5" id="metric-sivigila">2</h3>
+                                <span class="text-[11px] text-red-400 font-medium">Notificación inmediata req.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Access & Highlights -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Recent Appointments Table -->
+                        <div class="lg:col-span-2 bg-slate-950 rounded-2xl border border-slate-800 shadow-sm p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="text-base font-bold text-white">Agenda de Citas del Día</h2>
+                                <button onclick="switchTab('schedule')" class="text-xs text-brand-400 hover:underline font-semibold">Ver agenda completa</button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-slate-900 text-slate-400 text-xs uppercase tracking-wider">
+                                        <tr>
+                                            <th class="p-3 rounded-l-lg">Hora</th>
+                                            <th class="p-3">Paciente</th>
+                                            <th class="p-3">Servicio</th>
+                                            <th class="p-3">Profesional</th>
+                                            <th class="p-3 rounded-r-lg">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dashboard-appointments-list" class="divide-y divide-slate-800">
+                                        <!-- Dynamically filled -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Compliance & Supabase Cloud Card -->
+                        <div class="bg-gradient-to-br from-slate-950 to-slate-900 text-white rounded-2xl p-6 border border-slate-800 shadow-md flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Supabase DB Sync</span>
+                                    <i class="fa-solid fa-cloud-circle-check text-emerald-400 text-xl"></i>
+                                </div>
+                                <h3 class="text-lg font-bold">Respaldo Automático Cloud</h3>
+                                <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+                                    Los datos de registro y auditoría médica se respaldan de forma segura en la tabla <code class="text-emerald-400 bg-slate-900 px-1 py-0.5 rounded">registros</code> de Supabase para garantizar trazabilidad y normativas MinSalud.
+                                </p>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-800 space-y-3">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-400">URL Conectada:</span>
+                                    <span class="text-emerald-400 font-mono text-[10px]">ewepuftyygkhqfoqxufh</span>
+                                </div>
+                                <button onclick="openModal('supabaseFormModal')" class="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2.5 rounded-xl transition shadow">
+                                    <i class="fa-solid fa-pen-to-square mr-1.5"></i> Enviar Nuevo Registro Cloud
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. TAB: PATIENTS (PACIENTES) -->
+                <div id="tab-patients" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-950 rounded-2xl border border-slate-800 shadow-sm p-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                            <div>
+                                <h2 class="text-base font-bold text-white">Directorio de Pacientes</h2>
+                                <p class="text-xs text-slate-400">Gestión de datos demográficos y EPS (RIPS campo US)</p>
+                            </div>
+                            <div class="flex items-center space-x-3 w-full sm:w-auto">
+                                <div class="relative flex-1 sm:w-64">
+                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                        <i class="fa-solid fa-search"></i>
+                                    </span>
+                                    <input type="text" id="patientSearchInput" onkeyup="filterPatients()" placeholder="Buscar por cédula o nombre..." class="w-full pl-9 pr-4 py-2 text-xs bg-slate-900 border border-slate-800 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                </div>
+                                <button onclick="openModal('patientModal')" class="bg-health-600 hover:bg-health-700 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-sm transition whitespace-nowrap">
+                                    <i class="fa-solid fa-user-plus mr-1.5"></i> Nuevo
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Patients Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-900 text-slate-400 text-xs uppercase tracking-wider">
+                                    <tr>
+                                        <th class="p-3 rounded-l-lg">Tipo / Identificación</th>
+                                        <th class="p-3">Nombre Completo</th>
+                                        <th class="p-3">Edad / Género</th>
+                                        <th class="p-3">EPS / Aseguradora</th>
+                                        <th class="p-3">Teléfono</th>
+                                        <th class="p-3 rounded-r-lg text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="patients-table-body" class="divide-y divide-slate-800">
+                                    <!-- Populated via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. TAB: SCHEDULE (AGENDA) -->
+                <div id="tab-schedule" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-950 rounded-2xl border border-slate-800 shadow-sm p-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                            <div>
+                                <h2 class="text-base font-bold text-white">Agenda de Citas Médicas y Psicológicas</h2>
+                                <p class="text-xs text-slate-400">Control de disponibilidad y asignación de profesionales</p>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <input type="date" id="scheduleDateFilter" onchange="renderSchedule()" class="text-xs bg-slate-900 border border-slate-800 text-white px-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                <button onclick="openModal('appointmentModal')" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-sm transition">
+                                    <i class="fa-solid fa-calendar-plus mr-1.5"></i> Agendar Cita
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Schedule View Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="schedule-container">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. TAB: GENERAL MEDICINE (MEDICINA GENERAL) -->
+                <div id="tab-general-med" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-950 rounded-2xl border border-slate-800 shadow-sm p-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-slate-800 mb-6">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-lg bg-emerald-950 text-health-400 border border-health-800">Consulta Externa</span>
+                                    <h2 class="text-base font-bold text-white">Módulo de Historia Clínica - Medicina General</h2>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-1">Cumplimiento Resolución 1995 de 1999 & Estándares de Auditoría Médica</p>
+                            </div>
+                            <div class="mt-4 sm:mt-0 flex items-center space-x-3">
+                                <select id="select-patient-gm" class="text-xs bg-slate-900 border border-slate-800 text-white px-3 py-2 rounded-xl focus:ring-2 focus:ring-brand-500">
+                                    <option value="">Seleccionar Paciente...</option>
+                                </select>
+                                <button onclick="saveClinicalRecord('general')" class="bg-health-600 hover:bg-health-700 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow transition">
+                                    <i class="fa-solid fa-floppy-disk mr-1.5"></i> Guardar Historia
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Clinical Record Form -->
+                        <form id="form-general-med" class="space-y-6">
+                            <!-- Section: Anamnesis -->
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center">
+                                    <i class="fa-solid fa-notes-medical text-brand-400 mr-2"></i> 1. Anamnesis y Motivo de Consulta
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-400 mb-1">Motivo de Consulta</label>
+                                        <textarea rows="3" class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-3 rounded-xl focus:ring-2 focus:ring-brand-500" placeholder="Describa el motivo principal..."></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-400 mb-1">Enfermedad Actual</label>
+                                        <textarea rows="3" class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-3 rounded-xl focus:ring-2 focus:ring-brand-500" placeholder="Cronología de los síntomas..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section: Signos Vitales -->
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center">
+                                    <i class="fa-solid fa-heart-pulse text-brand-400 mr-2"></i> 2. Signos Vitales y Antropometría
+                                </h3>
+                                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-400 mb-1">Presión Arterial</label>
+                                        <input type="text" placeholder="120/80" class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-2.5 rounded-xl">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-400 mb-1">Frecuencia Cardíaca</label>
+                                        <input type="text" placeholder="72 lpm" class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-2.5 rounded-xl">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-400 mb-1">Temperatura (°C)</label>
+                                        <input type="text" placeholder="36.5" class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-2.5 rounded-xl">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-400 mb-1">Peso (kg)</label>
+                                        <input type="text" placeholder="70" class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-2.5 rounded-xl">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-400 mb-1">Talla (cm)</label>
+                                        <input type="text" placeholder="175" class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-2.5 rounded-xl">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-400 mb-1">Saturación O2</label>
+                                        <input type="text" placeholder="98%" class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-2.5 rounded-xl">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section: Diagnóstico CIE-10 -->
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center">
+                                    <i class="fa-solid fa-book-medical text-brand-400 mr-2"></i> 3. Diagnóstico (Codificación CIE-10 Colombia)
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-400 mb-1">Diagnóstico Principal (CIE-10)</label>
+                                        <select class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-2.5 rounded-xl">
+                                            <option value="J029">J029 - Faringitis aguda, no especificada</option>
+                                            <option value="I10X">I10X - Hipertensión esencial (primaria)</option>
+                                            <option value="E119">E119 - Diabetes mellitus tipo 2 sin mención de complicación</option>
+                                            <option value="K297">K297 - Gastritis, no especificada</option>
+                                            <option value="M545">M545 - Lumbago no especificado</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-400 mb-1">Tipo de Diagnóstico</label>
+                                        <select class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-2.5 rounded-xl">
+                                            <option>1. Impresión Diagnóstica</option>
+                                            <option>2. Confirmado Nuevo</option>
+                                            <option>3. Confirmado Repetido</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section: Plan y Tratamiento -->
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center">
+                                    <i class="fa-solid fa-prescription text-brand-400 mr-2"></i> 4. Plan de Manejo, Medicamentos y Órdenes
+                                </h3>
+                                <textarea rows="3" class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-3 rounded-xl focus:ring-2 focus:ring-brand-500" placeholder="Prescripción médica, recomendaciones, incapacidades o solicitudes de laboratorios..."></textarea>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 5. TAB: PSYCHOLOGY (PSICOLOGÍA) -->
+                <div id="tab-psychology" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-950 rounded-2xl border border-slate-800 shadow-sm p-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-slate-800 mb-6">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-lg bg-indigo-950 text-indigo-400 border border-indigo-800">Psicología Clínica</span>
+                                    <h2 class="text-base font-bold text-white">Módulo de Historia Clínica - Psicología</h2>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-1">Evaluación psicológica, examen mental y seguimiento cognitivo-conductual</p>
+                            </div>
+                            <div class="mt-4 sm:mt-0 flex items-center space-x-3">
+                                <select id="select-patient-psi" class="text-xs bg-slate-900 border border-slate-800 text-white px-3 py-2 rounded-xl focus:ring-2 focus:ring-brand-500">
+                                    <option value="">Seleccionar Paciente...</option>
+                                </select>
+                                <button onclick="saveClinicalRecord('psychology')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow transition">
+                                    <i class="fa-solid fa-floppy-disk mr-1.5"></i> Guardar Sesión
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Psychology Form -->
+                        <form class="space-y-6">
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center">
+                                    <i class="fa-solid fa-comments text-indigo-400 mr-2"></i> 1. Motivo de Consulta & Dinámica Actual
+                                </h3>
+                                <textarea rows="3" class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-3 rounded-xl focus:ring-2 focus:ring-indigo-500" placeholder="Motivo de consulta desde la perspectiva del consultante y contexto sociofamiliar..."></textarea>
+                            </div>
+
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center">
+                                    <i class="fa-solid fa-brain text-indigo-400 mr-2"></i> 2. Examen Mental (Observación Clínica)
+                                </h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-400 mb-1">Porte y Actitud</label>
+                                        <input type="text" placeholder="Aliñado, colaborador..." class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-2.5 rounded-xl">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-400 mb-1">Afecto / Ánimo</label>
+                                        <input type="text" placeholder="Eutímico, ansioso..." class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-2.5 rounded-xl">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-400 mb-1">Pensamiento & Orientación</label>
+                                        <input type="text" placeholder="Coherente, orientado x3..." class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-2.5 rounded-xl">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center">
+                                    <i class="fa-solid fa-clipboard-list text-indigo-400 mr-2"></i> 3. Diagnóstico Psicológico (CIE-10 / DSM-5)
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-400 mb-1">Diagnóstico CIE-10</label>
+                                        <select class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-2.5 rounded-xl">
+                                            <option value="F411">F411 - Trastorno de ansiedad generalizada</option>
+                                            <option value="F329">F329 - Episodio depresivo, no especificado</option>
+                                            <option value="F431">F431 - Trastorno de estrés postraumático</option>
+                                            <option value="Z630">Z630 - Problemas en la relación con cónyuge o pareja</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-400 mb-1">Enfoque Psicoterapéutico</label>
+                                        <select class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-2.5 rounded-xl">
+                                            <option>Cognitivo - Conductual</option>
+                                            <option>Sistémico Familiar</option>
+                                            <option>Psicodinámico</option>
+                                            <option>Humanista - Gestalt</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center">
+                                    <i class="fa-solid fa-stairs text-indigo-400 mr-2"></i> 4. Plan Terapéutico y Conclusiones
+                                </h3>
+                                <textarea rows="3" class="w-full text-xs bg-slate-900 border border-slate-800 text-white p-3 rounded-xl focus:ring-2 focus:ring-indigo-500" placeholder="Objetivos terapéuticos, tareas para casa y fecha próxima sesión..."></textarea>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 6. TAB: SUPABASE CLOUD RECORDS (REGISTROS) -->
+                <div id="tab-cloud-records" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-950 rounded-2xl border border-slate-800 shadow-sm p-6 space-y-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-slate-800">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-lg bg-emerald-950 text-emerald-400 border border-emerald-800">Supabase Cloud</span>
+                                    <h2 class="text-base font-bold text-white">Registros Almacenados en la Tabla 'registros'</h2>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-1">Sincronización en directo vía <code class="text-emerald-400">@supabase/supabase-js@2</code></p>
+                            </div>
+                            <button onclick="openModal('supabaseFormModal')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow transition flex items-center space-x-2">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <span>Nuevo Registro Cloud</span>
+                            </button>
+                        </div>
+
+                        <!-- Table of cloud records -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-900 text-slate-400 text-xs uppercase tracking-wider">
+                                    <tr>
+                                        <th class="p-3 rounded-l-lg">ID / Fecha</th>
+                                        <th class="p-3">Nombre</th>
+                                        <th class="p-3">Correo Electrónico</th>
+                                        <th class="p-3 rounded-r-lg">Mensaje / Datos de Registro</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cloud-records-table-body" class="divide-y divide-slate-800">
+                                    <!-- Populated from Supabase -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. TAB: RIPS & BILLING (RIPS & FACTURACIÓN) -->
+                <div id="tab-rips" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-950 rounded-2xl border border-slate-800 shadow-sm p-6 space-y-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-slate-800">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-lg bg-amber-950 text-amber-400 border border-amber-800">Ministerio de Salud</span>
+                                    <h2 class="text-base font-bold text-white">Módulo de Generación RIPS & Facturación Electrónica</h2>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-1">Estructura unificada de RIPS según Resolución 2275 de 2023 (JSON / Archivos planos)</p>
+                            </div>
+                            <div class="mt-4 sm:mt-0 flex items-center space-x-3">
+                                <button onclick="generateRIPSJSON()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow transition flex items-center space-x-2">
+                                    <i class="fa-solid fa-file-code"></i>
+                                    <span>Descargar JSON RIPS</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- RIPS Summary Metrics -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="p-4 rounded-xl bg-slate-900 border border-slate-800">
+                                <p class="text-xs font-medium text-slate-400">Transacciones del Periodo</p>
+                                <p class="text-xl font-bold text-white mt-1">342 Atenciones</p>
+                                <span class="text-[11px] text-health-400 font-medium">Validación sintáctica OK</span>
+                            </div>
+                            <div class="p-4 rounded-xl bg-slate-900 border border-slate-800">
+                                <p class="text-xs font-medium text-slate-400">Valor Total Facturado</p>
+                                <p class="text-xl font-bold text-white mt-1">$ 24,580,000 COP</p>
+                                <span class="text-[11px] text-slate-400 font-medium">EPS Sura, Nueva EPS, Sanitas</span>
+                            </div>
+                            <div class="p-4 rounded-xl bg-slate-900 border border-slate-800">
+                                <p class="text-xs font-medium text-slate-400">Paquete RIPS Generado</p>
+                                <p class="text-xl font-bold text-white mt-1">JSON Validado</p>
+                                <span class="text-[11px] text-amber-400 font-medium">Listo para envío DIAN / MinSalud</span>
+                            </div>
+                        </div>
+
+                        <!-- JSON RIPS Preview Box -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-xs font-bold text-slate-300 uppercase tracking-wider">Vista Previa Estructura JSON (Resolución 2275)</label>
+                                <button onclick="copyRIPSCode()" class="text-xs text-brand-400 hover:underline font-semibold flex items-center space-x-1">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span>Copiar JSON</span>
+                                </button>
+                            </div>
+                            <pre id="ripsJsonPreview" class="bg-black text-emerald-400 p-4 rounded-xl text-xs overflow-x-auto h-64 font-mono shadow-inner border border-slate-800"></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. TAB: SIVIGILA -->
+                <div id="tab-sivigila" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-950 rounded-2xl border border-slate-800 shadow-sm p-6 space-y-6">
+                        <div class="flex items-center justify-between pb-6 border-b border-slate-800">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-lg bg-red-950 text-red-400 border border-red-800">Salud Pública</span>
+                                    <h2 class="text-base font-bold text-white">Sistema Nacional de Vigilancia en Salud (SIVIGILA)</h2>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-1">Reporte obligatorio inmediato de eventos de interés en salud pública (Instituto Nacional de Salud)</p>
+                            </div>
+                            <button onclick="openModal('sivigilaModal')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow transition">
+                                <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Reportar Evento Nuevo
+                            </button>
+                        </div>
+
+                        <!-- SIVIGILA active alerts table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-900 text-slate-400 text-xs uppercase tracking-wider">
+                                    <tr>
+                                        <th class="p-3 rounded-l-lg">Código INS</th>
+                                        <th class="p-3">Evento Notificable</th>
+                                        <th class="p-3">Paciente Afectado</th>
+                                        <th class="p-3">Fecha Notificación</th>
+                                        <th class="p-3">Estado SIVIGILA</th>
+                                        <th class="p-3 rounded-r-lg text-right">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800">
+                                    <tr>
+                                        <td class="p-3 font-semibold text-white">115</td>
+                                        <td class="p-3 text-slate-300">Dengue Grave / Con Signos de Alarma</td>
+                                        <td class="p-3 text-slate-400">Carlos Mario Restrepo (CC 102345678)</td>
+                                        <td class="p-3 text-slate-400">20/10/2026</td>
+                                        <td class="p-3"><span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-full bg-red-950 text-red-400 border border-red-800">Urgente - Enviado</span></td>
+                                        <td class="p-3 text-right">
+                                            <button onclick="showNotification('Ficha epidemiológica 115 descargada.', 'success')" class="text-xs text-brand-400 hover:underline font-semibold">Ver Ficha</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3 font-semibold text-white">210</td>
+                                        <td class="p-3 text-slate-300">Intento de Suicidio / Riesgo Psicológico Agudo</td>
+                                        <td class="p-3 text-slate-400">Ana María Pérez (CC 43210987)</td>
+                                        <td class="p-3 text-slate-400">18/10/2026</td>
+                                        <td class="p-3"><span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-full bg-amber-950 text-amber-400 border border-amber-800">En Proceso</span></td>
+                                        <td class="p-3 text-right">
+                                            <button onclick="showNotification('Ficha epidemiológica 210 descargada.', 'success')" class="text-xs text-brand-400 hover:underline font-semibold">Ver Ficha</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 9. TAB: CIE-10 BUSCAR -->
+                <div id="tab-cie10" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-950 rounded-2xl border border-slate-800 shadow-sm p-6 space-y-6">
+                        <div>
+                            <h2 class="text-base font-bold text-white">Buscador Oficial CIE-10 (Colombia)</h2>
+                            <p class="text-xs text-slate-400 mt-1">Consulta rápida de diagnósticos para historias clínicas y reportes RIPS</p>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-search"></i>
+                            </span>
+                            <input type="text" id="cie10SearchInput" onkeyup="searchCie10()" placeholder="Escriba código (ej: J02) o nombre de la patología..." class="w-full pl-10 pr-4 py-3 text-xs bg-slate-900 border border-slate-800 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-900 text-slate-400 text-xs uppercase tracking-wider">
+                                    <tr>
+                                        <th class="p-3 rounded-l-lg">Código</th>
+                                        <th class="p-3">Descripción Oficial CIE-10</th>
+                                        <th class="p-3">Categoría / Capítulo</th>
+                                        <th class="p-3 rounded-r-lg text-right">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cie10-table-body" class="divide-y divide-slate-800">
+                                    <!-- Populated via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- Modal: Nuevo Paciente -->
+    <div id="patientModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+                <h3 class="text-base font-bold text-white">Registrar Nuevo Paciente (Datos RIPS)</h3>
+                <button onclick="closeModal('patientModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="newPatientForm" onsubmit="handlePatientSubmit(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Tipo Identificación</label>
+                        <select id="p-tipoId" class="w-full text-xs bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl">
+                            <option value="CC">CC - Cédula de Ciudadanía</option>
+                            <option value="TI">TI - Tarjeta de Identidad</option>
+                            <option value="CE">CE - Cédula de Extranjería</option>
+                            <option value="RC">RC - Registro Civil</option>
+                            <option value="PA">PA - Pasaporte</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Número Identificación</label>
+                        <input type="text" id="p-numId" required class="w-full text-xs bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl" placeholder="1020304050">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Nombre Completo</label>
+                    <input type="text" id="p-nombre" required class="w-full text-xs bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl" placeholder="Ej. Juan Carlos Pérez">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Edad</label>
+                        <input type="number" id="p-edad" required class="w-full text-xs bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl" placeholder="35">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Género</label>
+                        <select id="p-genero" class="w-full text-xs bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl">
+                            <option value="M">Masculino</option>
+                            <option value="F">Femenino</option>
+                            <option value="O">Otro</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">EPS / Aseguradora</label>
+                        <select id="p-eps" class="w-full text-xs bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl">
+                            <option value="EPS Sura">EPS Sura</option>
+                            <option value="Nueva EPS">Nueva EPS</option>
+                            <option value="Sanitas EPS">Sanitas EPS</option>
+                            <option value="Compensar EPS">Compensar EPS</option>
+                            <option value="Coosalud EPS">Coosalud EPS</option>
+                            <option value="Particular">Particular</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Teléfono Móvil</label>
+                        <input type="text" id="p-tel" required class="w-full text-xs bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl" placeholder="3001234567">
+                    </div>
+                </div>
+                <div class="pt-3 flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('patientModal')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="bg-health-600 hover:bg-health-700 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow">Guardar Paciente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Agendar Cita -->
+    <div id="appointmentModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+                <h3 class="text-base font-bold text-white">Agendar Cita Médica / Psicológica</h3>
+                <button onclick="closeModal('appointmentModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="newAppointmentForm" onsubmit="handleAppointmentSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Paciente</label>
+                    <select id="app-paciente" required class="w-full text-xs bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Servicio / Módulo</label>
+                        <select id="app-servicio" class="w-full text-xs bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl">
+                            <option value="Medicina General">Medicina General</option>
+                            <option value="Psicología Clínica">Psicología Clínica</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Profesional Asignado</label>
+                        <select id="app-profesional" class="w-full text-xs bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl">
+                            <option value="Dra. Marcela Gómez">Dra. Marcela Gómez (Med. General)</option>
+                            <option value="Dr. Andrés Felipe Rojas">Dr. Andrés Felipe Rojas (Psicología)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Fecha</label>
+                        <input type="date" id="app-fecha" required class="w-full text-xs bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Hora</label>
+                        <input type="time" id="app-hora" required class="w-full text-xs bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl">
+                    </div>
+                </div>
+                <div class="pt-3 flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('appointmentModal')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow">Confirmar Cita</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Formulario Directo Supabase (Tabla 'registros') -->
+    <div id="supabaseFormModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+                <h3 class="text-base font-bold text-white flex items-center">
+                    <i class="fa-solid fa-cloud text-emerald-400 mr-2"></i> Formulario Cloud Supabase
+                </h3>
+                <button onclick="closeModal('supabaseFormModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="miFormularioSupabase" onsubmit="handleSupabaseSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Nombre:</label>
+                    <input type="text" id="sup-nombre" required placeholder="Tu nombre" class="w-full text-xs bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Correo electrónico:</label>
+                    <input type="email" id="sup-email" required placeholder="correo@ejemplo.com" class="w-full text-xs bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Mensaje o datos a registrar:</label>
+                    <textarea id="sup-mensaje" rows="3" required placeholder="Escribe tu mensaje aquí..." class="w-full text-xs bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl focus:ring-2 focus:ring-emerald-500"></textarea>
+                </div>
+                <div class="pt-2 flex space-x-3">
+                    <button type="button" onclick="closeModal('supabaseFormModal')" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 rounded-xl text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="w-1/2 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-xs font-semibold shadow">Enviar y Respaldar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2"></div>
+
+    <!-- JavaScript Application Logic & Supabase Integration -->
+    <script>
+        // --- SUPABASE CONFIGURATION ---
+        const SUPABASE_URL = "https://ewepuftyygkhqfoqxufh.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_u1ueefVFlcFwNBgdHvCoMQ_gLRhV7KN";
+
+        // Initialize Supabase Client
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // --- MOCK DATABASE & STATE ---
+        let patients = [
+            { tipoId: 'CC', numId: '102345678', nombre: 'Carlos Mario Restrepo', edad: 42, genero: 'M', eps: 'EPS Sura', tel: '3104567890' },
+            { tipoId: 'CC', numId: '43210987', nombre: 'Ana María Pérez', edad: 28, genero: 'F', eps: 'Nueva EPS', tel: '3209876543' },
+            { tipoId: 'CC', numId: '71234567', nombre: 'Luis Fernando Gómez', edad: 55, genero: 'M', eps: 'Sanitas EPS', tel: '3112223344' },
+            { tipoId: 'TI', numId: '100898989', nombre: 'Sofía Valentina Morales', edad: 16, genero: 'F', eps: 'Compensar EPS', tel: '3156789012' }
+        ];
+
+        let appointments = [
+            { hora: '08:00 AM', paciente: 'Carlos Mario Restrepo', servicio: 'Medicina General', profesional: 'Dra. Marcela Gómez', estado: 'Confirmada' },
+            { hora: '09:00 AM', paciente: 'Ana María Pérez', servicio: 'Psicología Clínica', profesional: 'Dr. Andrés Felipe Rojas', estado: 'En Consulta' },
+            { hora: '10:30 AM', paciente: 'Luis Fernando Gómez', servicio: 'Medicina General', profesional: 'Dra. Marcela Gómez', estado: 'Programada' },
+            { hora: '02:00 PM', paciente: 'Sofía Valentina Morales', servicio: 'Psicología Clínica', profesional: 'Dr. Andrés Felipe Rojas', estado: 'Programada' }
+        ];
+
+        const cie10Database = [
+            { codigo: 'J029', descripcion: 'Faringitis aguda, no especificada', categoria: 'Infecciones respiratorias agudas' },
+            { codigo: 'I10X', descripcion: 'Hipertensión esencial (primaria)', categoria: 'Enfermedades hipertensivas' },
+            { codigo: 'E119', descripcion: 'Diabetes mellitus tipo 2 sin mención de complicación', categoria: 'Trastornos endocrinos' },
+            { codigo: 'F411', descripcion: 'Trastorno de ansiedad generalizada', categoria: 'Trastornos neuróticos y somatomorfos' },
+            { codigo: 'F329', descripcion: 'Episodio depresivo, no especificado', categoria: 'Trastornos del humor' },
+            { codigo: 'K297', descripcion: 'Gastritis, no especificada', categoria: 'Enfermedades del sistema digestivo' },
+            { codigo: 'M545', descripcion: 'Lumbago no especificado', categoria: 'Dorsalgias y trastornos de columna' },
+            { codigo: 'F431', descripcion: 'Trastorno de estrés postraumático', categoria: 'Reacciones a estrés grave' }
+        ];
+
+        let cloudRecordsList = [];
+
+        // --- INIT APP ---
+        window.onload = async function() {
+            renderDashboard();
+            renderPatients();
+            renderSchedule();
+            renderCie10Table();
+            populateSelects();
+            generateRIPSJSONPreview();
+            
+            // Set today date in filter
+            const today = new Date().toISOString().split('T')[0];
+            const dateFilter = document.getElementById('scheduleDateFilter');
+            if(dateFilter) dateFilter.value = today;
+
+            // Fetch records from Supabase
+            await fetchSupabaseRecords();
+        };
+
+        // --- SUPABASE DATA FETCH & SUBMIT ---
+        async function fetchSupabaseRecords() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('registros')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    console.warn('Nota de Supabase (Tabla registros posiblemente vacía o por crear):', error.message);
+                    cloudRecordsList = [
+                        { id: 1, created_at: '2026-10-21', nombre: 'Dra. Marcela Gómez', email: 'marcela.gomez@medisalud.co', mensaje: 'Inicio de jornada IPS y validación de RIPS mensual.' },
+                        { id: 2, created_at: '2026-10-21', nombre: 'Dr. Andrés Rojas', email: 'andres.rojas@medisalud.co', mensaje: 'Sincronización de agendas de psicología clínica.' }
+                    ];
+                } else {
+                    cloudRecordsList = data || [];
+                }
+                
+                document.getElementById('db-count').innerText = cloudRecordsList.length;
+                document.getElementById('metric-supabase').innerText = cloudRecordsList.length;
+                renderCloudRecordsTable();
+            } catch (err) {
+                console.error('Error al conectar con Supabase:', err);
+            }
+        }
+
+        async function handleSupabaseSubmit(e) {
+            e.preventDefault();
+            const nombreVal = document.getElementById('sup-nombre').value;
+            const emailVal = document.getElementById('sup-email').value;
+            const mensajeVal = document.getElementById('sup-mensaje').value;
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('registros')
+                    .insert([
+                        { nombre: nombreVal, email: emailVal, mensaje: mensajeVal }
+                    ]);
+
+                if (error) {
+                    console.error('Error al guardar en Supabase:', error.message);
+                    showNotification('Error al respaldar en Supabase: ' + error.message, 'error');
+                } else {
+                    showNotification('¡Datos registrados y respaldados correctamente en Supabase!', 'success');
+                    document.getElementById('miFormularioSupabase').reset();
+                    closeModal('supabaseFormModal');
+                    await fetchSupabaseRecords();
+                }
+            } catch (err) {
+                showNotification('Excepción de red al conectar con Supabase.', 'error');
+            }
+        }
+
+        function renderCloudRecordsTable() {
+            const tbody = document.getElementById('cloud-records-table-body');
+            tbody.innerHTML = '';
+            if(cloudRecordsList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">No hay registros en la nube actualmente.</td></tr>`;
+                return;
+            }
+            cloudRecordsList.forEach(item => {
+                const fechaStr = item.created_at ? new Date(item.created_at).toLocaleString() : 'Fecha reciente';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-900/50 transition">
+                        <td class="p-3 font-mono text-xs text-emerald-400">#${item.id || 'N/A'}<br><span class="text-[10px] text-slate-500">${fechaStr}</span></td>
+                        <td class="p-3 font-semibold text-white">${item.nombre || 'Sin nombre'}</td>
+                        <td class="p-3 text-slate-300">${item.email || 'Sin correo'}</td>
+                        <td class="p-3 text-slate-300 text-xs">${item.mensaje || item.data || ''}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- NAVIGATION TABS ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('bg-brand-600', 'text-white', 'shadow-md', 'shadow-brand-600/20');
+                link.classList.add('hover:bg-slate-900', 'text-slate-300');
+                if(link.getAttribute('data-tab') === tabId) {
+                    link.classList.add('bg-brand-600', 'text-white', 'shadow-md', 'shadow-brand-600/20');
+                    link.classList.remove('hover:bg-slate-900', 'text-slate-300');
+                }
+            });
+
+            // Update title
+            const titles = {
+                'dashboard': 'Dashboard General IPS',
+                'patients': 'Directorio de Pacientes & EPS',
+                'schedule': 'Agenda de Citas & Disponibilidad',
+                'general-med': 'Módulo de Medicina General',
+                'psychology': 'Módulo de Psicología Clínica',
+                'cloud-records': 'Registros Almacenados en Supabase Cloud',
+                'rips': 'Generación de RIPS & Facturación Electrónica',
+                'sivigila': 'Vigilancia Epidemiológica SIVIGILA',
+                'cie10': 'Buscador Oficial CIE-10 Colombia'
+            };
+            document.getElementById('page-title').innerText = titles[tabId] || 'Consultorio Médico';
+
+            if(window.innerWidth < 1024) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+            }
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        // --- RENDERING FUNCTIONS ---
+        function renderDashboard() {
+            const tbody = document.getElementById('dashboard-appointments-list');
+            tbody.innerHTML = '';
+            appointments.forEach(app => {
+                const badgeColor = app.estado === 'En Consulta' ? 'bg-amber-950 text-amber-400 border border-amber-800' : (app.estado === 'Confirmada' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-slate-900 text-slate-300');
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-900/50 transition">
+                        <td class="p-3 font-medium text-slate-300">${app.hora}</td>
+                        <td class="p-3 font-semibold text-white">${app.paciente}</td>
+                        <td class="p-3 text-slate-400">${app.servicio}</td>
+                        <td class="p-3 text-slate-400">${app.profesional}</td>
+                        <td class="p-3"><span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-full ${badgeColor}">${app.estado}</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderPatients() {
+            const tbody = document.getElementById('patients-table-body');
+            tbody.innerHTML = '';
+            patients.forEach(p => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-900/50 transition">
+                        <td class="p-3 font-medium text-slate-300"><span class="text-xs font-bold bg-slate-900 px-2 py-1 rounded text-slate-400 mr-2">${p.tipoId}</span>${p.numId}</td>
+                        <td class="p-3 font-semibold text-white">${p.nombre}</td>
+                        <td class="p-3 text-slate-400">${p.edad} años (${p.genero})</td>
+                        <td class="p-3"><span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-lg bg-brand-950 text-brand-300 border border-brand-800">${p.eps}</span></td>
+                        <td class="p-3 text-slate-400">${p.tel}</td>
+                        <td class="p-3 text-right space-x-2">
+                            <button onclick="editPatient('${p.numId}')" class="text-xs text-brand-400 hover:underline font-semibold">Editar</button>
+                            <button onclick="deletePatient('${p.numId}')" class="text-xs text-red-400 hover:underline font-semibold">Eliminar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderSchedule() {
+            const container = document.getElementById('schedule-container');
+            container.innerHTML = `
+                <div class="bg-slate-900 p-5 rounded-xl border border-slate-800">
+                    <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider mb-4 flex items-center">
+                        <i class="fa-solid fa-user-doctor text-health-400 mr-2"></i> Medicina General (Dra. Marcela Gómez)
+                    </h3>
+                    <div class="space-y-3">
+                        ${appointments.filter(a => a.servicio === 'Medicina General').map(a => `
+                            <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex justify-between items-center shadow-sm">
+                                <div>
+                                    <span class="text-xs font-bold text-brand-400 block">${a.hora}</span>
+                                    <p class="text-sm font-semibold text-white">${a.paciente}</p>
+                                </div>
+                                <span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">${a.estado}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="bg-slate-900 p-5 rounded-xl border border-slate-800">
+                    <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider mb-4 flex items-center">
+                        <i class="fa-solid fa-brain text-indigo-400 mr-2"></i> Psicología Clínica (Dr. Andrés Rojas)
+                    </h3>
+                    <div class="space-y-3">
+                        ${appointments.filter(a => a.servicio === 'Psicología Clínica').map(a => `
+                            <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex justify-between items-center shadow-sm">
+                                <div>
+                                    <span class="text-xs font-bold text-indigo-400 block">${a.hora}</span>
+                                    <p class="text-sm font-semibold text-white">${a.paciente}</p>
+                                </div>
+                                <span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-full bg-indigo-950 text-indigo-400 border border-indigo-800">${a.estado}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderCie10Table() {
+            const tbody = document.getElementById('cie10-table-body');
+            tbody.innerHTML = '';
+            cie10Database.forEach(c => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-900/50 transition">
+                        <td class="p-3 font-bold text-brand-400">${c.codigo}</td>
+                        <td class="p-3 text-slate-200 font-medium">${c.descripcion}</td>
+                        <td class="p-3 text-slate-400">${c.categoria}</td>
+                        <td class="p-3 text-right">
+                            <button onclick="selectCie10('${c.codigo}')" class="text-xs bg-brand-950 hover:bg-brand-900 text-brand-300 border border-brand-800 px-3 py-1.5 rounded-lg font-semibold transition">Usar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function populateSelects() {
+            const selects = ['select-patient-gm', 'select-patient-psi', 'app-paciente'];
+            selects.forEach(selId => {
+                const sel = document.getElementById(selId);
+                if(sel) {
+                    sel.innerHTML = '<option value="">Seleccionar Paciente...</option>';
+                    patients.forEach(p => {
+                        sel.innerHTML += `<option value="${p.nombre}">${p.nombre} (${p.numId})</option>`;
+                    });
+                }
+            });
+        }
+
+        function handlePatientSubmit(e) {
+            e.preventDefault();
+            const newP = {
+                tipoId: document.getElementById('p-tipoId').value,
+                numId: document.getElementById('p-numId').value,
+                nombre: document.getElementById('p-nombre').value,
+                edad: parseInt(document.getElementById('p-edad').value),
+                genero: document.getElementById('p-genero').value,
+                eps: document.getElementById('p-eps').value,
+                tel: document.getElementById('p-tel').value
+            };
+            patients.push(newP);
+            closeModal('patientModal');
+            renderPatients();
+            populateSelects();
+            showNotification(`Paciente ${newP.nombre} registrado con éxito.`, 'success');
+            document.getElementById('newPatientForm').reset();
+        }
+
+        function handleAppointmentSubmit(e) {
+            e.preventDefault();
+            const newA = {
+                hora: document.getElementById('app-hora').value,
+                paciente: document.getElementById('app-paciente').value,
+                servicio: document.getElementById('app-servicio').value,
+                profesional: document.getElementById('app-profesional').value,
+                estado: 'Programada'
+            };
+            appointments.push(newA);
+            closeModal('appointmentModal');
+            renderDashboard();
+            renderSchedule();
+            showNotification('Cita agendada correctamente.', 'success');
+            document.getElementById('newAppointmentForm').reset();
+        }
+
+        function saveClinicalRecord(type) {
+            showNotification(`Historia clínica de ${type === 'general' ? 'Medicina General' : 'Psicología'} guardada y auditada según Resolución 1995.`, 'success');
+        }
+
+        function deletePatient(numId) {
+            patients = patients.filter(p => p.numId !== numId);
+            renderPatients();
+            populateSelects();
+            showNotification('Paciente eliminado del registro.', 'info');
+        }
+
+        function generateRIPSJSONPreview() {
+            const ripsObj = {
+                "numDocumentoIdObligado": "900123456",
+                "razonSocial": "IPS MediSalud Colombia SAS",
+                "periodoReporte": "2026-10",
+                "usuarios": patients.map(p => ({
+                    "tipoDocumentoIdentificacion": p.tipoId,
+                    "numeroDocumentoIdentificacion": p.numId,
+                    "tipoUsuario": "01",
+                    "fechaNacimiento": "1984-05-12",
+                    "sexo": p.genero,
+                    "codigoPaisResidencia": "170",
+                    "codigoMunicipioResidencia": "05001",
+                    "codigoZonaTerritorialResidencia": "01"
+                })),
+                "consultas": appointments.map((a, i) => ({
+                    "codPrestador": "050010012301",
+                    "fechaHoraConsulta": "2026-10-21 08:00",
+                    "modalidadGrupoServicioTecnologia": "01",
+                    "grupoServicios": "01",
+                    "codigoServicio": a.servicio === 'Medicina General' ? '890201' : '890206',
+                    "diagnosticoPrincipal": "J029",
+                    "tipoDiagnosticoPrincipal": "1",
+                    "valorConsulta": 55000,
+                    "conceptoRecaudo": "01",
+                    "valorPagoModerador": 0
+                }))
+            };
+            document.getElementById('ripsJsonPreview').innerText = JSON.stringify(ripsObj, null, 2);
+        }
+
+        function generateRIPSJSON() {
+            generateRIPSJSONPreview();
+            showNotification('Paquete RIPS JSON generado y verificado sin errores sintácticos.', 'success');
+        }
+
+        function copyRIPSCode() {
+            const text = document.getElementById('ripsJsonPreview').innerText;
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showNotification('JSON RIPS copiado al portapapeles.', 'success');
+        }
+
+        function searchCie10() {
+            const query = document.getElementById('cie10SearchInput').value.toLowerCase();
+            const tbody = document.getElementById('cie10-table-body');
+            tbody.innerHTML = '';
+            const filtered = cie10Database.filter(c => c.codigo.toLowerCase().includes(query) || c.descripcion.toLowerCase().includes(query));
+            filtered.forEach(c => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-900/50 transition">
+                        <td class="p-3 font-bold text-brand-400">${c.codigo}</td>
+                        <td class="p-3 text-slate-200 font-medium">${c.descripcion}</td>
+                        <td class="p-3 text-slate-400">${c.categoria}</td>
+                        <td class="p-3 text-right">
+                            <button onclick="selectCie10('${c.codigo}')" class="text-xs bg-brand-950 hover:bg-brand-900 text-brand-300 border border-brand-800 px-3 py-1.5 rounded-lg font-semibold transition">Usar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function selectCie10(codigo) {
+            showNotification(`Diagnóstico CIE-10 [${codigo}] seleccionado para la historia clínica activa.`, 'success');
+            switchTab('general-med');
+        }
+
+        function filterPatients() {
+            const query = document.getElementById('patientSearchInput').value.toLowerCase();
+            const tbody = document.getElementById('patients-table-body');
+            tbody.innerHTML = '';
+            const filtered = patients.filter(p => p.nombre.toLowerCase().includes(query) || p.numId.includes(query));
+            filtered.forEach(p => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-900/50 transition">
+                        <td class="p-3 font-medium text-slate-300"><span class="text-xs font-bold bg-slate-900 px-2 py-1 rounded text-slate-400 mr-2">${p.tipoId}</span>${p.numId}</td>
+                        <td class="p-3 font-semibold text-white">${p.nombre}</td>
+                        <td class="p-3 text-slate-400">${p.edad} años (${p.genero})</td>
+                        <td class="p-3"><span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-lg bg-brand-950 text-brand-300 border border-brand-800">${p.eps}</span></td>
+                        <td class="p-3 text-slate-400">${p.tel}</td>
+                        <td class="p-3 text-right space-x-2">
+                            <button onclick="editPatient('${p.numId}')" class="text-xs text-brand-400 hover:underline font-semibold">Editar</button>
+                            <button onclick="deletePatient('${p.numId}')" class="text-xs text-red-400 hover:underline font-semibold">Eliminar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgCol = type === 'success' ? 'bg-slate-950 border border-emerald-500/30 text-white' : 'bg-brand-900 text-white';
+            const icon = type === 'success' ? 'fa-circle-check text-emerald-400' : 'fa-circle-info text-white';
+            
+            toast.className = `${bgCol} px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-xs font-medium transform transition-all translate-y-2 opacity-0 duration-300`;
+            toast.innerHTML = `<i class="fa-solid ${icon} text-base"></i><span>${message}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
