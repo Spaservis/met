@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spaservis | Sistema de Inspección, Aseguramiento y SST Colombia 2026</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#0d9488',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        },
+                        accent: {
+                            500: '#f59e0b',
+                            600: '#d97706',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome Icons & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- SDK de Supabase (JavaScript Client) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glassmorphism {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(13, 148, 136, 0.4);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 transition-colors duration-300 min-h-screen flex flex-col custom-scrollbar">
+
+    <!-- Acceso seguro: requiere usuario configurado en Supabase Auth -->
+    <div id="auth-gate" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/95 backdrop-blur-md p-4">
+      <div class="w-full max-w-md rounded-3xl border border-teal-800 bg-slate-900 p-7 shadow-2xl">
+        <div class="mb-6 text-center">
+          <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-600 text-slate-950"><i class="fa-solid fa-user-shield text-2xl"></i></div>
+          <h2 class="text-xl font-extrabold text-white">Acceso a Spaservis SST</h2>
+          <p class="mt-2 text-sm text-slate-400">Inicia sesión con un usuario habilitado en Supabase Auth.</p>
+        </div>
+        <form onsubmit="signInSST(event)" class="space-y-4">
+          <div><label for="auth-email" class="mb-1 block text-xs font-semibold uppercase text-slate-300">Correo electrónico</label><input id="auth-email" type="email" autocomplete="username" required class="w-full rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-teal-500" placeholder="usuario@empresa.com"></div>
+          <div><label for="auth-password" class="mb-1 block text-xs font-semibold uppercase text-slate-300">Contraseña</label><input id="auth-password" type="password" autocomplete="current-password" required class="w-full rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-teal-500" placeholder="Contraseña de Supabase Auth"></div>
+          <button type="submit" class="w-full rounded-xl bg-teal-600 px-4 py-3 text-sm font-bold text-white hover:bg-teal-500">Iniciar sesión</button>
+          <p id="auth-message" role="status" class="text-sm text-slate-300"></p>
+        </form>
+        <p class="mt-4 text-xs leading-relaxed text-slate-500">El administrador debe habilitar la cuenta en Supabase Auth y configurar las políticas RLS.</p>
+      </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- Header / Navigation -->
+    <header class="sticky top-0 z-40 glassmorphism border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('dashboard')">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-600 via-emerald-500 to-amber-500 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-teal-500/20 transform hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-user-shield text-slate-950 text-2xl"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-teal-400 via-emerald-300 to-amber-300 bg-clip-text text-transparent">Spaservis SST</span>
+                            <span class="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-teal-950 text-teal-300 rounded-full border border-teal-800">Colombia 2026</span>
+                        </div>
+                        <span class="block text-xs text-slate-400 font-medium tracking-wide">Sistema de Inspección, Aseguramiento y Gestión SG-SST (Dec. 1072 / Res. 0312)</span>
+                    </div>
+                </div>
+
+                <nav class="hidden lg:flex space-x-1 bg-slate-900 p-1.5 rounded-2xl border border-slate-800">
+                    <button id="nav-dashboard" onclick="switchTab('dashboard')" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 text-white bg-teal-600 shadow-md"><i class="fa-solid fa-chart-pie mr-1.5"></i>Dashboard</button>
+                    <button id="nav-inspection" onclick="switchTab('inspection')" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 text-slate-300 hover:text-teal-400"><i class="fa-solid fa-clipboard-check mr-1.5"></i>Inspecciones</button>
+                    <button id="nav-matrix" onclick="switchTab('matrix')" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 text-slate-300 hover:text-teal-400"><i class="fa-solid fa-triangle-exclamation mr-1.5"></i>Matriz GTC-45</button>
+                    <button id="nav-incidents" onclick="switchTab('incidents')" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 text-slate-300 hover:text-teal-400"><i class="fa-solid fa-truck-medical mr-1.5"></i>Accidentes & SIVIGILA</button>
+                </nav>
+
+                <div class="flex items-center space-x-3">
+                    <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-teal-950/60 border border-teal-800 text-teal-300 text-xs font-semibold">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span>Supabase Conectado</span>
+                    </div>
+                    <button onclick="signOutSST()" title="Cerrar sesión" class="hidden sm:inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800"><i class="fa-solid fa-right-from-bracket"></i><span>Salir</span></button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- DASHBOARD SECTION -->
+        <section id="section-dashboard" class="space-y-8">
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-teal-950 via-slate-900 to-emerald-950 text-white p-8 shadow-2xl border border-teal-800/60">
+                <div class="relative z-10 max-w-3xl space-y-3">
+                    <h1 class="text-2xl md:text-4xl font-black tracking-tight text-white leading-tight">Sistema Unificado de <span class="text-teal-400">Aseguramiento y Prevención</span></h1>
+                    <p class="text-slate-300 text-xs md:text-sm leading-relaxed">Control dinámico de inspecciones planeadas, matriz GTC 45 y notificaciones epidemiológicas y SIVIGILA.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- INSPECTION SECTION -->
+        <section id="section-inspection" class="hidden space-y-8">
+            <div class="bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-800 space-y-6">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-clipboard-list text-teal-400"></i> Registro de Inspección Técnica SST</h3>
+                <form id="inspection-form" onsubmit="handleInspectionSubmit(event)" class="space-y-5">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Sede / Área *</label>
+                            <select id="insp-location" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-sm text-white">
+                                <option value="Sede Principal - Planta">Sede Principal - Planta</option>
+                                <option value="Bodega y Logística">Bodega y Logística</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Inspector *</label>
+                            <input type="text" id="insp-inspector" required placeholder="Nombre" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-sm text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Tipo *</label>
+                            <select id="insp-type" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-sm text-white">
+                                <option value="Planeada General">Planeada General</option>
+                                <option value="Uso de EPP">Uso de EPP</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="px-6 py-3 bg-teal-600 hover:bg-teal-500 font-bold text-white rounded-xl text-sm">Guardar Inspección</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- SIVIGILA & INCIDENTS SECTION -->
+        <section id="section-incidents" class="hidden space-y-8">
+            <div class="bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-800 space-y-6">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-hospital-user text-rose-400"></i> Registro de Paciente & Notificación SIVIGILA</h3>
+                <form id="sivigila-form" onsubmit="handleSivigilaSubmit(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Tipo Documento</label>
+                            <select id="patient-doc-type" class="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 text-sm text-white">
+                                <option value="CC">Cédula de Ciudadanía</option>
+                                <option value="TI">Tarjeta de Identidad</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Número Documento</label>
+                            <input type="text" id="patient-doc-num" required class="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 text-sm text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Nombres y Apellidos</label>
+                            <input type="text" id="patient-fullname" required class="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 text-sm text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Edad</label>
+                            <input type="number" id="patient-age" required class="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 text-sm text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Sexo Biológico</label>
+                            <select id="patient-gender" class="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 text-sm text-white">
+                                <option value="M">Masculino</option>
+                                <option value="F">Femenino</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Código Evento SIVIGILA</label>
+                            <input type="text" id="sivigila-event" value="358" required class="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 text-sm text-white">
+                        </div>
+                    </div>
+                    <button type="submit" class="px-6 py-3 bg-rose-600 hover:bg-rose-500 font-bold text-white rounded-xl text-sm">Registrar y Notificar SIVIGILA</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- MATRIX SECTION -->
+        <section id="section-matrix" class="hidden space-y-8">
+            <div class="bg-slate-900 p-8 rounded-3xl border border-slate-800 text-center">
+                <h3 class="text-xl font-bold text-white">Matriz de Riesgos GTC-45</h3>
+                <p class="text-slate-400 mt-2">Módulo configurado para despliegue de controles y valoraciones de probabilidad vs. consecuencia.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- JavaScript de Control y Supabase -->
+    <script>
+        const SUPABASE_URL = 'https://ewepuftyygkhqfoqxufh.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_u1ueefVFlcFwNBgdHvCoMQ_gLRhV7KN';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let currentSession = null;
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if(!container) return;
+            const toast = document.createElement('div');
+            toast.className = `p-4 rounded-xl text-sm font-semibold text-white shadow-xl pointer-events-auto transition-all ${type === 'info' ? 'bg-amber-600' : 'bg-teal-600'}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 4000);
+        }
+
+        function switchTab(tabId) {
+            ['dashboard', 'inspection', 'matrix', 'incidents'].forEach(t => {
+                const sec = document.getElementById(`section-${t}`);
+                if(sec) sec.classList.add('hidden');
+                const nav = document.getElementById(`nav-${t}`);
+                if(nav) {
+                    nav.classList.remove('bg-teal-600', 'text-white', 'shadow-md');
+                    nav.classList.add('text-slate-300');
+                }
+            });
+            const activeSec = document.getElementById(`section-${tabId}`);
+            if(activeSec) activeSec.classList.remove('hidden');
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if(activeNav) {
+                activeNav.classList.add('bg-teal-600', 'text-white', 'shadow-md');
+                activeNav.classList.remove('text-slate-300');
+            }
+        }
+
+        function setAuthMessage(message, isError = false) {
+            const el = document.getElementById('auth-message');
+            if (!el) return;
+            el.textContent = message;
+            el.className = 'text-sm ' + (isError ? 'text-rose-300' : 'text-teal-300');
+        }
+
+        async function signInSST(event) {
+            event.preventDefault();
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+            setAuthMessage('Validando acceso…');
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) { 
+                setAuthMessage('No se pudo iniciar sesión. Verifica tus credenciales.', true); 
+                console.error(error); 
+                return; 
+            }
+            currentSession = data.session;
+            document.getElementById('auth-gate').classList.add('hidden');
+            document.getElementById('auth-password').value = '';
+            setAuthMessage('');
+            showToast('¡Sesión iniciada correctamente!');
+            await loadSSTData();
+        }
+
+        async function signOutSST() {
+            await supabase.auth.signOut();
+            currentSession = null;
+            document.getElementById('auth-gate').classList.remove('hidden');
+        }
+
+        async function loadSSTData() {
+            if (!currentSession) return;
+            try {
+                const [inspRes, riskRes, incRes] = await Promise.all([
+                    supabase.from('sst_inspecciones').select('*').order('created_at', { ascending: false }),
+                    supabase.from('sst_matriz_riesgos').select('*').order('created_at', { ascending: false }),
+                    supabase.from('sst_incidentes').select('*').order('created_at', { ascending: false })
+                ]);
+                if (inspRes.error || riskRes.error || incRes.error) {
+                    console.warn("Nota: Algunas tablas pueden requerir la columna created_at o políticas RLS.");
+                }
+                showToast('Datos sincronizados con Supabase');
+            } catch (error) {
+                console.error('Error cargando datos SST:', error);
+            }
+        }
+
+        async function handleInspectionSubmit(event) {
+            event.preventDefault();
+            if (!currentSession) { alert('Inicia sesión primero.'); return; }
+            
+            const location = document.getElementById('insp-location').value;
+            const inspector = document.getElementById('insp-inspector').value;
+            const type = document.getElementById('insp-type').value;
+
+            const { error } = await supabase.from('sst_inspecciones').insert([{
+                codigo: 'INS-' + Math.floor(Math.random() * 1000),
+                fecha: new Date().toISOString().split('T')[0],
+                sede_area: location,
+                inspector: inspector,
+                tipo_inspeccion: type,
+                nivel_riesgo: 'Bajo',
+                descripcion: 'Inspección planeada registrada desde la app web.'
+            }]);
+
+            if (error) {
+                alert('Error al guardar inspección: ' + error.message);
+                console.error(error);
+                return;
+            }
+
+            showToast('Inspección registrada con éxito');
+            document.getElementById('inspection-form').reset();
+            loadSSTData();
+        }
+
+        async function handleSivigilaSubmit(event) {
+            event.preventDefault();
+            if (!currentSession) { alert('Debes iniciar sesión antes de registrar datos.'); return; }
+
+            const docType = document.getElementById('patient-doc-type').value;
+            const docNum = document.getElementById('patient-doc-num').value;
+            const fullName = document.getElementById('patient-fullname').value;
+            const age = parseInt(document.getElementById('patient-age').value);
+            const gender = document.getElementById('patient-gender').value;
+
+            let { data: paciente, error: pError } = await supabase
+                .from('pacientes')
+                .upsert({ 
+                    tipo_documento: docType, 
+                    numero_documento: docNum, 
+                    nombres_apellidos: fullName,
+                    edad: age,
+                    sexo_biologico: gender
+                }, { onConflict: 'numero_documento' })
+                .select()
+                .single();
+
+            if (pError) {
+                console.error('Error al guardar paciente:', pError);
+                alert('Hubo un error al registrar el paciente: ' + pError.message);
+                return;
+            }
+
+            const eventCode = document.getElementById('sivigila-event').value;
+            const { error: sError } = await supabase
+                .from('sivigila_notificaciones')
+                .insert([{
+                    paciente_id: paciente.id,
+                    codigo_evento: eventCode,
+                    nombre_evento: 'Notificación Epidemiológica',
+                    diagnostico_cie10: 'F32',
+                    nivel_riesgo: 'Alto',
+                    notificado_correo: true
+                }]);
+
+            if (sError) {
+                console.error('Error al guardar SIVIGILA:', sError);
+                alert('El paciente se guardó, pero falló la notificación SIVIGILA: ' + sError.message);
+                return;
+            }
+
+            alert('Notificación SIVIGILA registrada exitosamente en Supabase');
+            document.getElementById('sivigila-form').reset();
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            const { data } = await supabase.auth.getSession();
+            currentSession = data?.session || null;
+            if (currentSession) {
+                document.getElementById('auth-gate').classList.add('hidden');
+                loadSSTData();
+            }
+        });
+    </script>
+</body>
+</html>
